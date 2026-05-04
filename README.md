@@ -91,7 +91,32 @@ Convention : All python scripts must be run from the root specifying the relativ
 
   - If you do not specify a json file, you will be asked to enter manually each feature. 
 
-
 ------------------------
 
 <p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+
+------------------------
+
+# Data
+
+## Raw
+
+The original, immutable data dump.
+Le jeu de données est fourni et hebergé par Datascientest.
+Il correspond aux données annuelles 2021 des accidents corporels de la circulation routiere fournis par Data.gouv. 
+
+## External
+### Data.gouv : Jeux de données CSV et API
+https://www.data.gouv.fr/datasets/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024
+[Description des bases de données annuelles](https://www.data.gouv.fr/datasets/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024?resource_id=8ef4c2a3-91a0-4d98-ae3a-989bde87b62a)
+
+https://www.data.gouv.fr/dataservices/api-tabulaire-data-gouv-fr-beta
+L'URL de base de l'API tabulaire est https://tabular-api.data.gouv.fr/api.
+Sa documentation technique générale est https://tabular-api.data.gouv.fr/api/doc.
+
+Identifiant de ressource rid pour bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere
+- Table des caractéristiques des accidents corporels de la circulation en 2024 en France : rid = 83f0fb0e-e0ef-47fe-93dd-9aaee851674a https://static.data.gouv.fr/resources/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024/20251021-115900/caract-2024.csv
+- https://static.data.gouv.fr/resources/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024/20251021-115812/lieux-2024.csv
+
+Peut-on automatiser l'export des csv, via les url de téléchargement ?
+Via l'API tabulaire, comment identifier quand une nouvelle ressource est dispo et surtout comment récupérer le rid qui est propre à chaque csv de chaque année et de chaque type de données (caract, lieux, vehicules, usagers) ?
