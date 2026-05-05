@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  predict:
+    build:
+      context: ./src/models
+      dockerfile: Dockerfile.predict
+    container_name: predict
+    ports:
+      - "8000:8000"
