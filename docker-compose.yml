@@ -3,8 +3,16 @@ version: '3.8'
 services:
   predict:
     build:
-      context: ./src/models
-      dockerfile: Dockerfile.predict
+      context: .
+      dockerfile: src/models/Dockerfile.predict
     container_name: predict
     ports:
       - "8000:8000"
+  streamlit:
+    build:
+      context: .
+      dockerfile: src/streamlit/Dockerfile
+    environment:
+      - MODEL_API_URL=http://predict:8000
+    ports:
+      - "8501:8501"
