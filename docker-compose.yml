@@ -9,7 +9,7 @@ services:
 #     ports:
 #       - "8000:8000"
   ml-api:
-      image: accident-prediction-api:lastest # Si on refait un build plus tard, pensez à retagger la nouvelle image pareil
+      image: predict_service:latest # Si on refait un build plus tard, pensez à retagger la nouvelle image pareil
       container_name: accident-prediction-api
       ports:
         - "3000:3000"
@@ -19,6 +19,6 @@ services:
       context: .
       dockerfile: src/streamlit/Dockerfile
     environment:
-      - MODEL_API_URL=http://predict:8000
+      - MODEL_API_URL=http://ml-api:3000
     ports:
       - "8501:8501"

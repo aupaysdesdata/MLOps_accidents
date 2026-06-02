@@ -6,7 +6,7 @@ labels:
 
 # On inclut le dossier src à la racine du Bento
 include:
-  - src/
+  - src/bentoml/service.py
 
 models:
   - model_rf:latest # en prod mettre --> accidents_rf:latest (pour les tests cela ne peut pas marcher)
