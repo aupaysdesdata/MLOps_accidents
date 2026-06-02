@@ -1,13 +1,19 @@
 version: '3.8'
 
 services:
-  predict:
-    build:
-      context: .
-      dockerfile: src/models/Dockerfile.predict
-    container_name: predict
-    ports:
-      - "8000:8000"
+# predict: # version du predict sans BentoML
+#     build:
+#       context: .
+#       dockerfile: src/models/Dockerfile.predict
+#     container_name: predict
+#     ports:
+#       - "8000:8000"
+  ml-api:
+      image: accident-prediction-api:lastest # Si on refait un build plus tard, pensez à retagger la nouvelle image pareil
+      container_name: accident-prediction-api
+      ports:
+        - "3000:3000"
+      restart: unless-stopped
   streamlit:
     build:
       context: .
