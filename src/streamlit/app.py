@@ -116,9 +116,9 @@ if submitted:
             response.raise_for_status()
             result = response.json()
 
-            prediction = (
-                result.get("prediction") or result.get("class") or result.get("label")
-            )
+            prediction = result.get("prediction")
+            if isinstance(prediction, list):
+                prediction = prediction[0]
 
             st.divider()
             st.subheader("Résultat")
