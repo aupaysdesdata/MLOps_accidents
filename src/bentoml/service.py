@@ -1,10 +1,11 @@
-# import mlflow
+import mlflow
 import bentoml
 import numpy as np
+import os
 from pydantic import BaseModel, Field, ConfigDict
 
-# Todo: Var environnement docker-compose
-model_path = ""
+
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
 
 
 class InputModel(BaseModel):
@@ -43,8 +44,7 @@ class InputModel(BaseModel):
 @bentoml.service
 class PredictService:
     def __init__(self):
-        # self.model = mlflow.sklearn.load_model(model_path)
-        self.model = bentoml.sklearn.load_model("model_rf")
+        self.model = mlflow.sklearn.load_model("models:/model_rf/Production")
 
     @bentoml.api(route="/predict")
     def predict(self, input_data: InputModel) -> dict:

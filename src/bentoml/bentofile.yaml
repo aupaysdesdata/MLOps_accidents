@@ -1,15 +1,11 @@
-service: "src.bentoml.service:PredictService" # anciennement "src.bentoml.service:RFClassifierService" mais pas bon
+service: "src.bentoml.service:PredictService"
 description: "Service for predicting accidents"
 labels:
   owner: "DataScientest"
   project: "accident_prediction"
 
-# On inclut le dossier src à la racine du Bento
 include:
   - src/bentoml/service.py
-
-models:
-  - model_rf:latest # en prod mettre --> accidents_rf:latest (pour les tests cela ne peut pas marcher)
 
 python:
   packages:
