@@ -44,7 +44,9 @@ class InputModel(BaseModel):
 @bentoml.service
 class PredictService:
     def __init__(self):
-        self.model = mlflow.sklearn.load_model("models:/model_rf/Production")
+        self.model = mlflow.sklearn.load_model(
+            "models:/Modèle_Gravité_Accidents/latest"
+        )
 
     @bentoml.api(route="/predict")
     def predict(self, input_data: InputModel) -> dict:

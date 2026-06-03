@@ -1,13 +1,21 @@
 version: '3.8'
 
 services:
-# predict: # version du predict sans BentoML
-#     build:
-#       context: .
-#       dockerfile: src/models/Dockerfile.predict
-#     container_name: predict
-#     ports:
-#       - "8000:8000"
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.11.3
+    ports:
+      - "5000:5000"
+    command: mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root /app/mlruns --host 0.0.0.0 --port 5000
+    volumes:
+      - ./mlruns:/app/mlruns
+  train:
+    build:
+      context: .
+      dockerfile: src/models/Dockerfile.train
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ./mlruns:/app/mlruns
   ml-api:
     image: predict_service:latest
     container_name: accident-prediction-api
@@ -18,7 +26,7 @@ services:
     restart: unless-stopped
     depends_on:
       - mlflow
-
+      - train
   streamlit:
     build:
       context: .
