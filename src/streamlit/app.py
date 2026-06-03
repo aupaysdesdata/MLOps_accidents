@@ -7,7 +7,12 @@ API_URL = os.getenv("MODEL_API_URL")
 
 LABEL_MAP = {0: "non-prioritary", 1: "prioritary"}
 
-CATU = {1: "Conducteur", 2: "Passager", 3: "Piéton", 4: "Piéton en rollers / trottinette"}
+CATU = {
+    1: "Conducteur",
+    2: "Passager",
+    3: "Piéton",
+    4: "Piéton en rollers / trottinette",
+}
 SECU1 = {
     0: "Sans objet",
     1: "Ceinture",
@@ -122,13 +127,19 @@ with st.form("prediction_form"):
     with col1:
         st.markdown("**Contexte général**")
         place = st.number_input("Place occupée (place)", value=1, step=1)
-        catu = st.selectbox("Catégorie usager (catu)", options=list(CATU), format_func=lambda x: CATU[x])
+        catu = st.selectbox(
+            "Catégorie usager (catu)", options=list(CATU), format_func=lambda x: CATU[x]
+        )
         sexe = st.selectbox(
             "Sexe (sexe)",
             options=[1, 2],
             format_func=lambda x: "Masculin" if x == 1 else "Féminin",
         )
-        secu1 = st.selectbox("Équipement sécurité (secu1)", options=list(SECU1), format_func=lambda x: SECU1[x])
+        secu1 = st.selectbox(
+            "Équipement sécurité (secu1)",
+            options=list(SECU1),
+            format_func=lambda x: SECU1[x],
+        )
         year_acc = st.number_input("Année accident (year_acc)", value=2021, step=1)
         victim_age = st.number_input("Âge victime (victim_age)", value=30, step=1)
         nb_victim = st.number_input("Nb victimes (nb_victim)", value=1, step=1)
@@ -136,31 +147,74 @@ with st.form("prediction_form"):
 
     with col2:
         st.markdown("**Véhicule & route**")
-        catv = st.selectbox("Catégorie véhicule (catv)", options=list(CATV), format_func=lambda x: CATV[x], index=2)
-        obsm = st.selectbox("Obstacle mobile (obsm)", options=list(OBSM), format_func=lambda x: OBSM[x])
-        motor = st.selectbox("Motorisation (motor)", options=list(MOTOR), format_func=lambda x: MOTOR[x])
-        catr = st.selectbox("Catégorie route (catr)", options=list(CATR), format_func=lambda x: CATR[x], index=2)
-        circ = st.selectbox("Régime circulation (circ)", options=list(CIRC), format_func=lambda x: CIRC[x], index=1)
-        surf = st.selectbox("État surface (surf)", options=list(SURF), format_func=lambda x: SURF[x])
-        situ = st.selectbox("Situation accident (situ)", options=list(SITU), format_func=lambda x: SITU[x])
+        catv = st.selectbox(
+            "Catégorie véhicule (catv)",
+            options=list(CATV),
+            format_func=lambda x: CATV[x],
+            index=2,
+        )
+        obsm = st.selectbox(
+            "Obstacle mobile (obsm)", options=list(OBSM), format_func=lambda x: OBSM[x]
+        )
+        motor = st.selectbox(
+            "Motorisation (motor)", options=list(MOTOR), format_func=lambda x: MOTOR[x]
+        )
+        catr = st.selectbox(
+            "Catégorie route (catr)",
+            options=list(CATR),
+            format_func=lambda x: CATR[x],
+            index=2,
+        )
+        circ = st.selectbox(
+            "Régime circulation (circ)",
+            options=list(CIRC),
+            format_func=lambda x: CIRC[x],
+            index=1,
+        )
+        surf = st.selectbox(
+            "État surface (surf)", options=list(SURF), format_func=lambda x: SURF[x]
+        )
+        situ = st.selectbox(
+            "Situation accident (situ)",
+            options=list(SITU),
+            format_func=lambda x: SITU[x],
+        )
         vma = st.number_input("Vitesse max autorisée (vma)", value=50, step=10)
 
     with col3:
         st.markdown("**Localisation & conditions**")
-        jour = st.number_input("Jour (jour)", value=1, step=1, min_value=1, max_value=31)
-        mois = st.number_input("Mois (mois)", value=1, step=1, min_value=1, max_value=12)
-        hour = st.number_input("Heure (hour)", value=12, step=1, min_value=0, max_value=23)
-        lum = st.selectbox("Luminosité (lum)", options=list(LUM), format_func=lambda x: LUM[x])
+        jour = st.number_input(
+            "Jour (jour)", value=1, step=1, min_value=1, max_value=31
+        )
+        mois = st.number_input(
+            "Mois (mois)", value=1, step=1, min_value=1, max_value=12
+        )
+        hour = st.number_input(
+            "Heure (hour)", value=12, step=1, min_value=0, max_value=23
+        )
+        lum = st.selectbox(
+            "Luminosité (lum)", options=list(LUM), format_func=lambda x: LUM[x]
+        )
         dep = st.number_input("Département (dep)", value=75, step=1)
         com = st.number_input("Commune (com)", value=1, step=1)
         agg_ = st.selectbox(
             "En agglomération (agg_)",
             options=[1, 2],
-            format_func=lambda x: "Hors agglomération" if x == 1 else "En agglomération",
+            format_func=lambda x: (
+                "Hors agglomération" if x == 1 else "En agglomération"
+            ),
         )
-        int_ = st.selectbox("Intersection (int)", options=list(INT), format_func=lambda x: INT[x])
-        atm = st.selectbox("Conditions atmosphériques (atm)", options=list(ATM), format_func=lambda x: ATM[x])
-        col_ = st.selectbox("Type collision (col)", options=list(COL), format_func=lambda x: COL[x])
+        int_ = st.selectbox(
+            "Intersection (int)", options=list(INT), format_func=lambda x: INT[x]
+        )
+        atm = st.selectbox(
+            "Conditions atmosphériques (atm)",
+            options=list(ATM),
+            format_func=lambda x: ATM[x],
+        )
+        col_ = st.selectbox(
+            "Type collision (col)", options=list(COL), format_func=lambda x: COL[x]
+        )
         lat = st.number_input("Latitude (lat)", value=48.85, format="%.5f")
         long_ = st.number_input("Longitude (long)", value=2.35, format="%.5f")
 
@@ -210,7 +264,7 @@ if submitted:
             try:
                 response = requests.post(
                     f"{API_URL}/predict",
-                    json=payload,
+                    json={"input_data": payload},
                     timeout=15,
                 )
                 response.raise_for_status()
