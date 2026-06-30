@@ -176,7 +176,7 @@ def process_data(
     ]
     df_veh["catv"] = df_veh["catv"].replace(catv_value, catv_value_new)
 
-    # --Merging datasets
+    # -- Merging datasets
     fusion1 = df_users.merge(
         df_veh, on=["Num_Acc", "num_veh", "id_vehicule"], how="inner"
     )
