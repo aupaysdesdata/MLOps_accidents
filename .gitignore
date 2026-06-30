@@ -94,3 +94,7 @@ target/
 
 # MLflow
 mlruns/
+
+#Certificates
+*.crt
+*.key
