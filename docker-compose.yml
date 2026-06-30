@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   mlflow:
     image: ghcr.io/mlflow/mlflow:v2.11.3
@@ -21,22 +20,32 @@ services:
     container_name: accident-prediction-api
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     restart: unless-stopped
     depends_on:
       mlflow:
         condition: service_started
       train:
         condition: service_completed_successfully
-
   streamlit:
     build:
       context: .
       dockerfile: src/streamlit/Dockerfile
     environment:
       - MODEL_API_URL=http://ml-api:3000
-    ports:
-      - "8501:8501"
+    expose:
+      - "8501"
     depends_on:
       - ml-api
+  nginx:
+    build:
+      context: src/nginx
+      dockerfile: Dockerfile
+    ports:
+      - "443:443"
+      - "80:80"
+    depends_on:
+      - streamlit
+      - ml-api
+    restart: unless-stopped
