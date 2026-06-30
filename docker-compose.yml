@@ -5,7 +5,7 @@ services:
     image: ghcr.io/mlflow/mlflow:v2.11.3
     ports:
       - "5000:5000"
-    command: mlflow server --backend-store-uri sqlite:///mlflow.db --default-artifact-root /app/mlruns --host 0.0.0.0 --port 5000
+    command: mlflow server --backend-store-uri sqlite:///mlflow.db --artifacts-destination /app/mlruns --serve-artifacts --host 0.0.0.0 --port 5000
     volumes:
       - ./mlruns:/app/mlruns
   train:
@@ -17,7 +17,7 @@ services:
     volumes:
       - ./mlruns:/app/mlruns
   ml-api:
-    image: predict_service:latest
+    image: ghcr.io/hugoperso/accident-prediction-api:latest
     container_name: accident-prediction-api
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
@@ -25,8 +25,11 @@ services:
       - "3000:3000"
     restart: unless-stopped
     depends_on:
-      - mlflow
-      - train
+      mlflow:
+        condition: service_started
+      train:
+        condition: service_completed_successfully
+
   streamlit:
     build:
       context: .

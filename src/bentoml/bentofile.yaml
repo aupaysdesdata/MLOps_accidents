@@ -16,3 +16,5 @@ python:
     - pydantic==2.11.0
     - requests==2.32.5
     - pyjwt==2.10.1
+    - mlflow==2.11.3
+    - setuptools<81

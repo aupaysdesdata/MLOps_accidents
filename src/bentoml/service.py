@@ -1,9 +1,10 @@
-import mlflow
+import os
 import bentoml
 import numpy as np
-import os
 from pydantic import BaseModel, Field, ConfigDict
 
+with bentoml.importing():
+    import mlflow
 
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
 
