@@ -1,5 +1,26 @@
-
+# V2
 import joblib
+import pandas as pd
+from fastapi import FastAPI, Request
+import os
+
+BASE_DIR = os.path.dirname(__file__)
+MODEL_PATH = os.path.join(BASE_DIR, "trained_model.joblib")
+
+# Load your saved model
+loaded_model = joblib.load(MODEL_PATH)
+
+app = FastAPI()
+
+@app.post("/predict")
+async def prediction(request: Request):
+    data_dict = await request.json()
+    df = pd.DataFrame([data_dict])
+    pred = loaded_model.predict(df)
+    return {"prediction": pred.tolist()}
+
+# V1
+"""import joblib 
 import pandas as pd
 import sys
 import json
@@ -31,4 +52,5 @@ if __name__ == "__main__":
         features = get_feature_values_manually(feature_names)
 
     result = predict_model(features)
-    print(f"prediction : {result[0]}")
+    print(f"prediction : {result[0]}") # ici faut qu'on arrive à transmettre le résultat au container streamlit
+"""
