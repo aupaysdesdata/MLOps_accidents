@@ -1,0 +1,10 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org \
+    fastapi uvicorn mlflow scikit-learn numpy pydantic
+
+COPY src/bentoml/service_local.py .
+
+CMD ["uvicorn", "service_local:app", "--host", "0.0.0.0", "--port", "3000"]

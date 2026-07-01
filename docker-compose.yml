@@ -18,7 +18,9 @@ services:
       - ./mlruns:/app/mlruns
 
   ml-api:
-    image: ghcr.io/hugoperso/accident-prediction-api:latest
+    build:
+      context: .
+      dockerfile: src/bentoml/Dockerfile.local
     container_name: accident-prediction-api
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
@@ -37,8 +39,8 @@ services:
       dockerfile: src/streamlit/Dockerfile
     environment:
       - MODEL_API_URL=http://ml-api:3000
-    expose:
-      - "8501"
+    ports:
+      - "8501:8501"
     depends_on:
       - ml-api
 
@@ -80,7 +82,7 @@ services:
       PYTHONPATH: /opt/airflow/src:/opt/airflow/src/data:/opt/airflow/src/models
       MLFLOW_TRACKING_URI: http://mlflow:5000
       AIRFLOW__WEBSERVER__WORKERS: '1'
-      HOST_PROJECT_DIR: /Users/ctouboul/MLOps_accidents
+
     volumes:
       - ./dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
