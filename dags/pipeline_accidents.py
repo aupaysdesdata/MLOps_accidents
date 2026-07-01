@@ -1,7 +1,6 @@
 from datetime import datetime
 from airflow import DAG
 from airflow.providers.docker.operators.docker import DockerOperator
-from docker.types import Mount
 from airflow.operators.python import PythonOperator
 from airflow.exceptions import AirflowFailException
 import mlflow
@@ -9,7 +8,6 @@ from mlflow.tracking import MlflowClient
 import requests
 import os
 
-BASE_DIR = os.environ.get('HOST_PROJECT_DIR', os.path.abspath(os.path.dirname(__file__) + "/../.."))
 
 MLFLOW_TRACKING_URI = "http://mlflow:5000"
 EXPERIMENT_NAME = "Gravité_Accidents"
@@ -132,7 +130,6 @@ with DAG(
         auto_remove=True,
         network_mode=DOCKER_NETWORK,
         environment={'MLFLOW_TRACKING_URI': MLFLOW_TRACKING_URI},
-        mounts=[Mount(source=f"{BASE_DIR}/mlruns", target="/app/mlruns", type="bind")]
     )
 
     task_evaluate = PythonOperator(

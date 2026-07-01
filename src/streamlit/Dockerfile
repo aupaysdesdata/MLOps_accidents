@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY ./src/streamlit/requirements.txt .
 
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 COPY ./src/streamlit/. .
 EXPOSE 8501
