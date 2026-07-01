@@ -1,22 +1,58 @@
 version: '3.8'
-
 services:
-  predict:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.11.3
+    ports:
+      - "5000:5000"
+    command: mlflow server --backend-store-uri sqlite:///mlflow.db --artifacts-destination /app/mlruns --serve-artifacts --host 0.0.0.0 --port 5000
+    volumes:
+      - ./mlruns:/app/mlruns
+
+  train:
     build:
       context: .
-      dockerfile: src/models/Dockerfile.predict
-    container_name: predict
-    ports:
-      - "8000:8000"
+      dockerfile: src/train/Dockerfile
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ./mlruns:/app/mlruns
+
+  ml-api:
+    image: ghcr.io/hugoperso/accident-prediction-api:latest
+    container_name: accident-prediction-api
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    expose:
+      - "3000"
+    restart: unless-stopped
+    depends_on:
+      mlflow:
+        condition: service_started
+      train:
+        condition: service_completed_successfully
 
   streamlit:
     build:
       context: .
       dockerfile: src/streamlit/Dockerfile
     environment:
-      - MODEL_API_URL=http://predict:8000
+      - MODEL_API_URL=http://ml-api:3000
+    expose:
+      - "8501"
+    depends_on:
+      - ml-api
+
+  nginx:
+    build:
+      context: src/nginx
+      dockerfile: Dockerfile
     ports:
-      - "8501:8501"
+      - "443:443"
+      - "80:80"
+    depends_on:
+      - streamlit
+      - ml-api
+    restart: unless-stopped
 
   postgres-airflow:
     image: postgres:15
@@ -31,21 +67,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  mlflow:
-    image: ghcr.io/mlflow/mlflow:latest
-    ports:
-      - "5000:5000"
-    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:////mlflow/mlflow.db --default-artifact-root /mlruns
-    volumes:
-      - mlflow-db:/mlflow
-      - mlruns:/mlruns
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 15s
 
   airflow:
     build:
@@ -83,5 +104,3 @@ services:
 volumes:
   postgres-airflow-data:
   airflow-logs:
-  mlflow-db:
-  mlruns:
