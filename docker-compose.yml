@@ -34,7 +34,8 @@ services:
       dockerfile: src/streamlit/Dockerfile
     environment:
       - MODEL_API_URL=http://ml-api:3000
-    expose: "8501"
+    expose:
+      - "8501"
     depends_on:
       - ml-api
 
