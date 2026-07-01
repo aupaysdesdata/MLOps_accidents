@@ -262,6 +262,15 @@ def process_data(dataframes, output_folderpath):
         
         target = df["grav"]
         feats = df.drop(["grav"], axis=1)
+
+        # On retire les colonnes qui sont des identifiants et non des features
+        cols_to_drop = ["id_usager"] 
+        # On utilise .intersection() pour éviter une erreur si la colonne n'existe pas déjà
+        cols_to_drop = [c for c in cols_to_drop if c in feats.columns]
+        
+        if cols_to_drop:
+            feats = feats.drop(columns=cols_to_drop)
+            logger.info(f"  ✓ Colonnes identifiants retirées des features: {cols_to_drop}")
         
         logger.info(f"Séparation train/test...")
         X_train, X_test, y_train, y_test = train_test_split(
