@@ -9,7 +9,7 @@ from mlflow.tracking import MlflowClient
 import requests
 import os
 
-BASE_DIR = os.path.abspath(os.path.dirname(__file__) + "/../..")
+BASE_DIR = os.environ.get('HOST_PROJECT_DIR', os.path.abspath(os.path.dirname(__file__) + "/../.."))
 
 MLFLOW_TRACKING_URI = "http://mlflow:5000"
 EXPERIMENT_NAME = "Gravité_Accidents"
@@ -120,7 +120,7 @@ with DAG(
     #     task_id='docker_make_dataset',
     #     image='make_dataset:latest',
     #     api_version='auto',
-    #     auto_remove='success',
+    #     auto_remove=True,
     #     network_mode=DOCKER_NETWORK,
     #     mounts=[Mount(source=f"{BASE_DIR}/mlruns", target="/app/mlruns", type="bind")]
     # )
@@ -129,7 +129,7 @@ with DAG(
         task_id='docker_train',
         image='mon_projet_train:latest',
         api_version='auto',
-        auto_remove='success',
+        auto_remove=True,
         network_mode=DOCKER_NETWORK,
         environment={'MLFLOW_TRACKING_URI': MLFLOW_TRACKING_URI},
         mounts=[Mount(source=f"{BASE_DIR}/mlruns", target="/app/mlruns", type="bind")]
