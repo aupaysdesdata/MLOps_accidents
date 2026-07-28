@@ -7,7 +7,7 @@ with bentoml.importing():
     import mlflow
 
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
-
+MODEL_URI = "models:/Modèle_Gravité_Accidents@champion"
 
 class InputModel(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -48,6 +48,22 @@ class PredictService:
         self.model = mlflow.sklearn.load_model(
             "models:/Modèle_Gravité_Accidents/latest"
         )
+
+    def _load_model(self):
+        """Méthode interne pour (re)charger le modèle champion depuis MLflow."""
+        try:
+            self.model = mlflow.sklearn.load_model(MODEL_URI)
+            print(f"Modèle chargé avec succès depuis {MODEL_URI}")
+        except Exception as e:
+            # Fallback vers 'latest' si l'alias champion n'existe pas encore
+            print(f"Échec du chargement de {MODEL_URI} ({e}). Tentative avec 'latest'...")
+            self.model = mlflow.sklearn.load_model("models:/Modèle_Gravité_Accidents/latest")
+
+    @bentoml.api(route="/reload_model")
+    def reload_model(self) -> dict:
+        """Endpoint appelé par Airflow pour rafraîchir le modèle en mémoire."""
+        self._load_model()
+        return {"status": "success", "message": "Modèle rechargé avec succès"}
 
     @bentoml.api(route="/predict")
     def predict(self, input_data: InputModel) -> dict:
