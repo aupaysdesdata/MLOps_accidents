@@ -105,18 +105,123 @@ The original, immutable data dump.
 Le jeu de données est fourni et hebergé par Datascientest.
 Il correspond aux données annuelles 2021 des accidents corporels de la circulation routiere fournis par Data.gouv. 
 
-## External
-### Data.gouv : Jeux de données CSV et API
-https://www.data.gouv.fr/datasets/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024
-[Description des bases de données annuelles](https://www.data.gouv.fr/datasets/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024?resource_id=8ef4c2a3-91a0-4d98-ae3a-989bde87b62a)
+# MLOps accidents
 
-https://www.data.gouv.fr/dataservices/api-tabulaire-data-gouv-fr-beta
-L'URL de base de l'API tabulaire est https://tabular-api.data.gouv.fr/api.
-Sa documentation technique générale est https://tabular-api.data.gouv.fr/api/doc.
+Ce dépôt met en place un pipeline MLOps pour classer la gravité d’un accident de la route à partir de données ouvertes. Le projet combine preprocessing, entraînement de modèle, suivi d’expériences avec MLflow, exposition d’une API de prédiction et une interface Streamlit.
 
-Identifiant de ressource rid pour bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere
-- Table des caractéristiques des accidents corporels de la circulation en 2024 en France : rid = 83f0fb0e-e0ef-47fe-93dd-9aaee851674a https://static.data.gouv.fr/resources/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024/20251021-115900/caract-2024.csv
-- https://static.data.gouv.fr/resources/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024/20251021-115812/lieux-2024.csv
+## Vue d’ensemble
 
-Peut-on automatiser l'export des csv, via les url de téléchargement ?
-Via l'API tabulaire, comment identifier quand une nouvelle ressource est dispo et surtout comment récupérer le rid qui est propre à chaque csv de chaque année et de chaque type de données (caract, lieux, vehicules, usagers) ?
+Le flux actuel du projet est le suivant :
+
+- ingestion et préparation des données issues du dossier [data/raw](data/raw)
+- création de jeux de données train/test dans [data/preprocessed](data/preprocessed)
+- entraînement d’un modèle Random Forest dans [src/train/train_model.py](src/train/train_model.py)
+- enregistrement des métriques et du modèle dans MLflow
+- prédiction via une API et une interface utilisateur Streamlit
+
+## Structure du projet
+
+- [data/raw](data/raw) : fichiers CSV bruts des années 2021 à 2024
+- [data/preprocessed](data/preprocessed) : données préparées utilisées pour l’entraînement
+- [data/archives](data/archives) : copies de jeux de données historiques
+- [src/preprocess/preprocess.py](src/preprocess/preprocess.py) : fusion et transformation des datasets
+- [src/train/train_model.py](src/train/train_model.py) : entraînement du modèle et logging MLflow
+- [src/streamlit/app.py](src/streamlit/app.py) : application web de démonstration
+- [src/bentoml/service.py](src/bentoml/service.py) : service de prédiction basé sur BentoML
+- [docker-compose.yml](docker-compose.yml) : orchestration de MLflow, entraînement, API et interface
+- [mlruns](mlruns) : artefacts et métadonnées MLflow
+
+## Prérequis
+
+- Python 3.10+
+- Docker et Docker Compose
+- (optionnel) conda ou virtualenv
+
+## Démarrage rapide
+
+### 1. Créer un environnement Python
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+Sous Windows PowerShell :
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+### 2. Installer les dépendances
+
+```bash
+pip install -r src/preprocess/requirements.txt
+pip install -r src/train/requirements.txt
+pip install -r src/streamlit/requirements.txt
+```
+
+### 3. Préparer les données
+
+```bash
+python src/preprocess/preprocess.py
+```
+
+Cette étape produit les fichiers CSV dans [data/preprocessed](data/preprocessed).
+
+### 4. Entraîner le modèle
+
+```bash
+python src/train/train_model.py
+```
+
+Le script entraîne un Random Forest et enregistre les métriques suivantes dans MLflow :
+
+- accuracy
+- precision
+- recall
+- f1_score
+
+Le modèle est également enregistré sous le nom de registre : Modèle_Gravité_Accidents.
+
+### 5. Lancer l’application localement
+
+Pour l’interface Streamlit :
+
+```bash
+streamlit run src/streamlit/app.py
+```
+
+## Déploiement avec Docker
+
+Le projet peut être lancé dans son ensemble via Docker Compose :
+
+```bash
+docker compose up --build
+```
+
+Le compose inclut :
+
+- MLflow sur le port 5000
+- l’entraînement du modèle
+- une API de prédiction
+- une interface Streamlit
+- un reverse proxy Nginx
+
+## Expérience MLflow
+
+Les runs sont visibles dans l’interface MLflow à l’adresse suivante :
+
+```text
+http://localhost:5000
+```
+
+## Notes importantes
+
+- Les données utilisées par le modèle sont celles présentes dans [data/preprocessed](data/preprocessed).
+- Le modèle de référence est actuellement un Random Forest.
+- Les prédictions sont envoyées depuis [src/streamlit/app.py](src/streamlit/app.py) vers l’API de prédiction configurée via la variable d’environnement MODEL_API_URL.
+
+## Sources de données
+
+Les jeux de données utilisés sont issus des bases publiques relatives aux accidents corporels de la circulation routière, disponibles via les fichiers fournis dans [data/raw](data/raw). Plus d'infos dans : [references\data_sources.md](references\data_sources.md).
