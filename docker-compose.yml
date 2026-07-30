@@ -6,100 +6,6 @@ services:
     command: mlflow server --backend-store-uri sqlite:///mlflow.db --artifacts-destination /app/mlruns --serve-artifacts --host 0.0.0.0 --port 5000
     volumes:
       - ./mlruns:/app/mlruns
-  
-  preprocess:
-    build:
-      context: .
-      dockerfile: src/preprocess/Dockerfile
-    volumes:
-      - accidents-data:/app/data
-    restart: "no"
-
-  train:
-    build:
-      context: .
-      dockerfile: src/train/Dockerfile
-    environment:
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-    volumes:
-      - ./mlruns:/app/mlruns
-    depends_on:
-      preprocess:
-        condition: service_completed_successfully
-      mlflow:
-        condition: service_started
-    restart: "no"
-
-  ml-api:
-    build:
-      context: .
-      dockerfile: src/bentoml/Dockerfile
-    container_name: accident-prediction-api
-    environment:
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-    expose:
-      - "3000"
-    restart: unless-stopped
-    depends_on:
-      mlflow:
-        condition: service_started
-      train:
-        condition: service_completed_successfully
-
-  streamlit:
-    build:
-      context: .
-      dockerfile: src/streamlit/Dockerfile
-    environment:
-      - MODEL_API_URL=http://ml-api:3000
-    ports:
-      - "8501"
-    depends_on:
-      ml-api:
-        condition: service_started
-
-  nginx:
-    build:
-      context: src/nginx
-      dockerfile: Dockerfile
-    ports:
-      - "443:443"
-      - "80:80"
-    depends_on:
-      streamlit:
-        condition: service_started
-      ml-api:
-        condition: service_started
-    restart: unless-stopped
-
-  prometheus:
-    image: prom/prometheus:latest
-    volumes:
-      - ./src/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-    depends_on:
-      ml-api:
-        condition: service_started
-
-  grafana:
-    image: grafana/grafana:latest
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_SECURITY_ADMIN_USER: admin
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./grafana/datasources:/etc/grafana/provisioning/datasources
-    ports:
-      - "3000:3000"
-    depends_on:
-      prometheus:
-        condition: service_started
 
   postgres-airflow:
     image: postgres:15
@@ -174,6 +80,101 @@ services:
       mlflow:
         condition: service_started
     restart: on-failure
+
+  preprocess:
+    build:
+      context: .
+      dockerfile: src/preprocess/Dockerfile
+    volumes:
+      - accidents-data:/app/data
+    restart: "no"
+
+  train:
+    build:
+      context: .
+      dockerfile: src/train/Dockerfile
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ./mlruns:/app/mlruns
+    depends_on:
+      preprocess:
+        condition: service_completed_successfully
+      mlflow:
+        condition: service_started
+    restart: "no"
+
+  ml-api:
+    build:
+      context: .
+      dockerfile: src/bentoml/Dockerfile
+    container_name: accident-prediction-api
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    expose:
+      - "3000"
+    restart: unless-stopped
+    depends_on:
+      mlflow:
+        condition: service_started
+      airflow:
+        condition: service_started
+  streamlit:
+    build:
+      context: .
+      dockerfile: src/streamlit/Dockerfile
+    environment:
+      - MODEL_API_URL=http://ml-api:3000
+    ports:
+      - "8501"
+    depends_on:
+      ml-api:
+        condition: service_started
+
+  nginx:
+    build:
+      context: src/nginx
+      dockerfile: Dockerfile
+    ports:
+      - "443:443"
+      - "80:80"
+    depends_on:
+      streamlit:
+        condition: service_started
+      ml-api:
+        condition: service_started
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./src/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    depends_on:
+      ml-api:
+        condition: service_started
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_USER: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_started
+
+
 
 volumes:
   postgres-airflow-data:

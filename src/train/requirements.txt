@@ -1,7 +1,4 @@
 pandas
-joblib
-fastapi
-uvicorn
-scikit-learn
+scikit-learn==1.6.1
 numpy
 mlflow==2.11.3

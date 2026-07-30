@@ -3,8 +3,7 @@ import bentoml
 import pandas as pd
 from pydantic import BaseModel, Field, ConfigDict
 import time
-from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
-from starlette.responses import Response
+from prometheus_client import Counter, Histogram
 import mlflow
 
 # Métriques Prometheus
@@ -81,9 +80,13 @@ class PredictService:
             self.model = mlflow.sklearn.load_model(MODEL_URI)
             print(f"Modèle chargé avec succès depuis {MODEL_URI}")
         except Exception as e:
-            # Fallback vers 'latest' si l'alias champion n'existe pas encore
-            print(f"Échec du chargement de {MODEL_URI} ({e}). Tentative avec 'latest'...")
-            self.model = mlflow.sklearn.load_model("models:/Modèle_Gravité_Accidents/latest")
+            print(f"Modèle non trouvé ({e}). Tentative avec 'latest'...")
+            try:
+                self.model = mlflow.sklearn.load_model("models:/Modèle_Gravité_Accidents/latest")
+                print("Modèle 'latest' chargé avec succès.")
+            except Exception as e_latest:
+                print(f"Aucun modèle disponible pour l'instant ({e_latest}). En attente du pipeline Airflow...")
+                self.model = None
 
     @bentoml.api(route="/reload_model")
     def reload_model(self) -> dict:

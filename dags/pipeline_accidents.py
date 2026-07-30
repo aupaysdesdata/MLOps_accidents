@@ -9,8 +9,6 @@ from airflow.utils.trigger_rule import TriggerRule
 from mlflow.tracking import MlflowClient
 import requests
 import os
-import re
-from pathlib import Path
 
 
 DATA_VOLUME_NAME = os.getenv("DATA_VOLUME_NAME", "mlops_accidents_accidents-data")
@@ -129,16 +127,9 @@ with DAG(
     description="Pipeline d'entraînement pour la gravité des accidents",
     schedule="@monthly",
     catchup=False,
+    is_paused_upon_creation=False,
     tags=["accidents"],
 ) as dag:
-    # task_make_dataset = DockerOperator(
-    #     task_id='docker_make_dataset',
-    #     image='make_dataset:latest',
-    #     api_version='auto',
-    #     auto_remove=True,
-    #     network_mode=DOCKER_NETWORK,
-    #     mounts=[Mount(source=f"{BASE_DIR}/mlruns", target="/app/mlruns", type="bind")]
-    # )
 
     task_preprocess = DockerOperator(
         task_id="preprocess",

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
 import numpy as np
-from pathlib import Path
 import click
 import logging
 from sklearn.model_selection import train_test_split
