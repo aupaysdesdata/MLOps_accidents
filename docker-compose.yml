@@ -24,12 +24,16 @@ services:
     volumes:
       - ./mlruns:/app/mlruns
     depends_on:
-      - mlflow
+      preprocess:
+        condition: service_completed_successfully
+      mlflow:
+        condition: service_started
     restart: "no"
 
   ml-api:
     build:
-      context: ./src/bentoml
+      context: .
+      dockerfile: src/bentoml/Dockerfile
     container_name: accident-prediction-api
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
@@ -39,6 +43,8 @@ services:
     depends_on:
       mlflow:
         condition: service_started
+      train:
+        condition: service_completed_successfully
 
   streamlit:
     build:
@@ -49,7 +55,8 @@ services:
     ports:
       - "8501"
     depends_on:
-      - ml-api
+      ml-api:
+        condition: service_started
 
   nginx:
     build:
@@ -59,9 +66,40 @@ services:
       - "443:443"
       - "80:80"
     depends_on:
-      - streamlit
-      - ml-api
+      streamlit:
+        condition: service_started
+      ml-api:
+        condition: service_started
     restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./src/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    depends_on:
+      ml-api:
+        condition: service_started
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_USER: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    ports:
+      - "3000:3000"
+    depends_on:
+      prometheus:
+        condition: service_started
 
   postgres-airflow:
     image: postgres:15
@@ -107,6 +145,8 @@ services:
       PYTHONPATH: /opt/airflow/src:/opt/airflow/src/data:/opt/airflow/src/models
       MLFLOW_TRACKING_URI: http://mlflow:5000
       AIRFLOW__WEBSERVER__WORKERS: '1'
+      # Ajout important pour éviter les erreurs de permissions sur les fichiers de logs/PID
+      AIRFLOW__LOGGING__LOGGING_LEVEL: INFO
 
     volumes:
       - ./dags:/opt/airflow/dags
@@ -139,3 +179,5 @@ volumes:
   postgres-airflow-data:
   airflow-logs:
   accidents-data:
+  prometheus_data:
+  grafana_data:

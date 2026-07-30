@@ -1,14 +1,12 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
-# Installation des dépendances
-COPY bentofile.yaml .
-RUN pip install --no-cache-dir bentoml mlflow scikit-learn numpy pydantic
+COPY ./src/bentoml/requirements.txt .
 
-# Copie du code
-COPY . /app
+RUN pip install --no-cache-dir -r requirements.txt
 
+COPY ./src/bentoml/. .
 EXPOSE 3000
 
-CMD ["bentoml", "serve", "service:PredictService", "--port", "3000", "--host", "0.0.0.0"]
+CMD ["bentoml", "serve", "service:PredictService", "--host", "0.0.0.0", "--port", "3000", "--production"]

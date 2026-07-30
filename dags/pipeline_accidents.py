@@ -22,15 +22,14 @@ DOCKER_NETWORK = "mlops_accidents_default"
 MAX_DROP_ALLOWED = 0.05
 
 
-
-
 default_args = {
-    'owner': 'mlops_team',
-    'start_date': datetime(2026, 1, 1),
-    'retries': 1,
+    "owner": "mlops_team",
+    "start_date": datetime(2026, 1, 1),
+    "retries": 1,
 }
 
-def check_metrics_and_alert(**context): 
+
+def check_metrics_and_alert(**context):
     """
     Récupère le f1_score du dernier run de l'expérience 'Gravité_Accidents'
     et le valide avant d'autoriser la mise en production.
@@ -40,26 +39,34 @@ def check_metrics_and_alert(**context):
 
     experiment = client.get_experiment_by_name(EXPERIMENT_NAME)
     if not experiment:
-        raise AirflowFailException(f"L'expérience '{EXPERIMENT_NAME}' n'a pas été trouvée dans MLflow.")
+        raise AirflowFailException(
+            f"L'expérience '{EXPERIMENT_NAME}' n'a pas été trouvée dans MLflow."
+        )
 
     runs = client.search_runs(
         experiment_ids=[experiment.experiment_id],
         order_by=["attributes.start_time DESC"],
-        max_results=1
+        max_results=1,
     )
 
     if not runs:
-        raise AirflowFailException(f"Aucun run trouvé pour l'expérience {EXPERIMENT_NAME}.")
+        raise AirflowFailException(
+            f"Aucun run trouvé pour l'expérience {EXPERIMENT_NAME}."
+        )
 
     current_run = runs[0]
     current_f1 = current_run.data.metrics.get("f1_score")
     current_run_id = current_run.info.run_id
 
-    context['ti'].xcom_push(key='current_run_id', value=current_run_id)
-    print(f"Nouveau modèle entraîné détecté - Run ID: {current_run_id} | F1-Score: {current_f1}")
+    context["ti"].xcom_push(key="current_run_id", value=current_run_id)
+    print(
+        f"Nouveau modèle entraîné détecté - Run ID: {current_run_id} | F1-Score: {current_f1}"
+    )
 
     if current_f1 is None:
-        raise AirflowFailException("Le dernier run MLflow n'a pas enregistré de métrique 'f1_score'.")
+        raise AirflowFailException(
+            "Le dernier run MLflow n'a pas enregistré de métrique 'f1_score'."
+        )
 
     try:
         prod_model_version = client.get_model_version_by_alias(MODEL_NAME, "champion")
@@ -75,6 +82,7 @@ def check_metrics_and_alert(**context):
     except mlflow.exceptions.MlflowException:
         print("Aucun modèle marqué '@champion' trouvé. Première promotion du projet.")
 
+
 def promote_model_to_champion(**context):
     """
     Associe l'alias 'champion' à la dernière version du modèle validé.
@@ -83,18 +91,22 @@ def promote_model_to_champion(**context):
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
     client = MlflowClient()
 
-    run_id = context['ti'].xcom_pull(key='current_run_id', task_ids='evaluate_metrics')
+    run_id = context["ti"].xcom_pull(key="current_run_id", task_ids="evaluate_metrics")
 
     filter_string = f"run_id='{run_id}'"
     versions = client.search_model_versions(filter_string)
 
     if not versions:
-        raise AirflowFailException(f"Aucune version de modèle trouvée dans le Registry pour le run {run_id}.")
+        raise AirflowFailException(
+            f"Aucune version de modèle trouvée dans le Registry pour le run {run_id}."
+        )
 
     latest_version = versions[0].version
 
     client.set_registered_model_alias(MODEL_NAME, "champion", latest_version)
-    print(f"Succès : Le modèle '{MODEL_NAME}' version {latest_version} est maintenant désigné comme '@champion'.")
+    print(
+        f"Succès : Le modèle '{MODEL_NAME}' version {latest_version} est maintenant désigné comme '@champion'."
+    )
 
 
 def reload_predict_service():
@@ -112,14 +124,13 @@ def reload_predict_service():
 
 
 with DAG(
-    'mlops_accident_gravity_pipeline',
+    "mlops_accident_gravity_pipeline",
     default_args=default_args,
-    description='Pipeline d\'entraînement pour la gravité des accidents',
-    schedule='@monthly',
+    description="Pipeline d'entraînement pour la gravité des accidents",
+    schedule="@monthly",
     catchup=False,
     tags=["accidents"],
 ) as dag:
-
     # task_make_dataset = DockerOperator(
     #     task_id='docker_make_dataset',
     #     image='make_dataset:latest',
@@ -130,9 +141,9 @@ with DAG(
     # )
 
     task_preprocess = DockerOperator(
-        task_id='preprocess',
-        image='mlops_accidents-preprocess:latest',
-        api_version='auto',
+        task_id="preprocess",
+        image="mlops_accidents-preprocess:latest",
+        api_version="auto",
         auto_remove=True,
         mount_tmp_dir=False,
         network_mode=DOCKER_NETWORK,
@@ -140,28 +151,28 @@ with DAG(
     )
 
     task_train = DockerOperator(
-        task_id='train',
-        image='mlops_accidents-train:latest',
-        api_version='auto',
+        task_id="train",
+        image="mlops_accidents-train:latest",
+        api_version="auto",
         auto_remove=True,
         mount_tmp_dir=False,
         network_mode=DOCKER_NETWORK,
-        environment={'MLFLOW_TRACKING_URI': MLFLOW_TRACKING_URI},
+        environment={"MLFLOW_TRACKING_URI": MLFLOW_TRACKING_URI},
         mounts=[Mount(source=f"{DATA_VOLUME_NAME}", target="/app/data", type="volume")],
     )
 
     task_evaluate = PythonOperator(
-        task_id='evaluate_metrics',
+        task_id="evaluate_metrics",
         python_callable=check_metrics_and_alert,
     )
 
     task_promote = PythonOperator(
-        task_id='promote_model',
+        task_id="promote_model",
         python_callable=promote_model_to_champion,
     )
 
     task_reload = PythonOperator(
-        task_id='reload_predict_service',
+        task_id="reload_predict_service",
         python_callable=reload_predict_service,
         trigger_rule=TriggerRule.ALL_DONE,
     )
