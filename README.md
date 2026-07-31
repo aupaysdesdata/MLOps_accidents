@@ -55,24 +55,26 @@ flowchart TD
   MLF -->|ui| GRAF
 ```
 
+
 ## 2. Structure du Repository
 
-├── LICENSE
-├── README.md                        <- Documentation technique MLOps du projet
-├── docker-compose.yml               <- Orchestration des services Docker
-├── Dockerfile.airflow                <- Image Airflow utilisée pour le scheduler et le webserver
-├── dags/                             <- DAG Airflow principal pour le pipeline
-│   └── pipeline_accidents.py         <- Orchestration des tâches preprocess/train/evaluate/promote/reload
-├── data/                             <- Données et volumes partagés utilisés par le pipeline
-├── mlruns/                           <- Artefacts et métadonnées MLflow
-├── src/                              <- Code source applicatif
-│   ├── bentoml/                      <- Service de prédiction BentoML + Dockerfile
-│   ├── preprocess/                   <- Préparation des données + Dockerfile
-│   ├── train/                        <- Entraînement du modèle + Dockerfile
-│   ├── streamlit/                    <- Application Streamlit frontend
-│   ├── nginx/                        <- Reverse proxy Nginx et configuration HTTPS
-│   └── prometheus/                   <- Configuration Prometheus
-├── grafana/                          <- Dashboards et datasources Grafana
+    ├── LICENSE
+    ├── README.md                         <- Documentation technique MLOps du projet
+    ├── docker-compose.yml                <- Orchestration des services Docker
+    ├── Dockerfile.airflow                <- Image Airflow utilisée pour le scheduler et le webserver
+    ├── dags/                             <- DAG Airflow principal pour le pipeline
+    │   └── pipeline_accidents.py         <- Orchestration des tâches preprocess/train/evaluate/promote/reload
+    ├── data/                             <- Données et volumes partagés utilisés par le pipeline
+    ├── grafana/                          <- Dashboards et datasources Grafana
+    ├── mlruns/                           <- Artefacts et métadonnées MLflow
+    ├── src/                              <- Code source applicatif
+    │   ├── bentoml/                      <- Service de prédiction BentoML + Dockerfile
+    │   ├── preprocess/                   <- Préparation des données + Dockerfile
+    │   ├── train/                        <- Entraînement du modèle + Dockerfile
+    │   ├── streamlit/                    <- Application Streamlit frontend
+    │   ├── nginx/                        <- Reverse proxy Nginx et configuration HTTPS
+    │   └── prometheus/                   <- Configuration Prometheus
+
 
 ## 3. Fonctionnement du Pipeline (Workflow Airflow)
 
