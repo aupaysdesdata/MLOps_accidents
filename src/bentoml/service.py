@@ -9,6 +9,8 @@ import time
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 from starlette.responses import Response
 import mlflow
+from starlette.routing import Route
+from starlette.responses import Response
 
 # ----------------------------------------
 # 1. L'Infrastructure de Monitoring (Prometheus)
@@ -183,10 +185,7 @@ class PredictService:
 # ----------------------------------------
     @staticmethod
     def on_asgi_app(app):
-        from starlette.routing import Route
-        from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
-        from starlette.responses import Response
-
+        
         async def metrics_endpoint(request):
             return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
         # Ajoute la route /metrics à l'application ASGI existante
