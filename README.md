@@ -62,19 +62,23 @@ flowchart TD
     ├── README.md                         <- Documentation technique MLOps du projet
     ├── docker-compose.yml                <- Orchestration des services Docker
     ├── Dockerfile.airflow                <- Image Airflow utilisée pour le scheduler et le webserver
+    ├── .github/                          <- Configuration CI/CD GitHub Actions
+    │   └── workflows/                    <- Workflows d’intégration continue
+    │       └── ci.yml                    <- Vérification de syntaxe et build Docker
     ├── dags/                             <- DAG Airflow principal pour le pipeline
     │   └── pipeline_accidents.py         <- Orchestration des tâches preprocess/train/evaluate/promote/reload
-    ├── data/                             <- Données et volumes partagés utilisés par le pipeline
     ├── grafana/                          <- Dashboards et datasources Grafana
     ├── mlruns/                           <- Artefacts et métadonnées MLflow
+    ├── notebooks/                        <- Notebooks d’exploration et de prototypage
+    ├── references/                       <- Documents de référence et sources de données
+    │   └── data_sources.md               <- Description des sources de données utilisées
     ├── src/                              <- Code source applicatif
     │   ├── bentoml/                      <- Service de prédiction BentoML + Dockerfile
-    │   ├── preprocess/                   <- Préparation des données + Dockerfile
-    │   ├── train/                        <- Entraînement du modèle + Dockerfile
-    │   ├── streamlit/                    <- Application Streamlit frontend
     │   ├── nginx/                        <- Reverse proxy Nginx et configuration HTTPS
-    │   └── prometheus/                   <- Configuration Prometheus
-
+    │   ├── preprocess/                   <- Préparation des données + Dockerfile
+    │   ├── prometheus/                   <- Configuration Prometheus
+    │   ├── streamlit/                    <- Application Streamlit frontend
+    │   └── train/                        <- Entraînement du modèle + Dockerfile
 
 ## 3. Fonctionnement du Pipeline (Workflow Airflow)
 
@@ -130,7 +134,16 @@ docker compose logs -f ml-api
 docker compose down -v
 ```
 
-## 5. Accès aux Interfaces (URLs et Ports)
+## 5. CI / Intégration Continue
+
+Le dépôt intègre une pipeline CI GitHub Actions définie dans [.github/workflows/ci.yml](.github/workflows/ci.yml). Elle couvre deux validations principales :
+
+- une vérification de syntaxe Python avec `python -m py_compile $(find src -name "*.py")` ;
+- un build des images Docker via `docker compose build` lors des pull requests ciblant la branche `master`.
+
+Cette automatisation permet de détecter rapidement les erreurs de compilation ou de conteneurisation avant la fusion des changements.
+
+## 6. Accès aux Interfaces (URLs et Ports)
 
 
 | Service               | URL                                                                                    | Identifiants / Notes | Rôle                                            |
