@@ -2,6 +2,3 @@ pandas
 joblib
 fastapi
 uvicorn
-scikit-learn
-numpy
-mlflow==2.11.3
