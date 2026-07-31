@@ -23,9 +23,10 @@ y_test = np.ravel(y_test)
 rf_classifier = ensemble.RandomForestClassifier(n_jobs=-1, random_state=42)
 
 with mlflow.start_run(run_name="Random Forest") as run:
-    # Entrainement du modèle
+    # Entraînement du modèle
     rf_classifier.fit(X_train, y_train)
 
+    # Évaluation sur les données de test préparées par le preprocess
     y_pred = rf_classifier.predict(X_test)
     accuracy = sklearn.metrics.accuracy_score(y_test, y_pred)
     precision_score = sklearn.metrics.precision_score(

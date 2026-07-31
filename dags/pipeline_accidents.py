@@ -5,10 +5,12 @@ from airflow.operators.python import PythonOperator
 from airflow.exceptions import AirflowFailException
 from docker.types import Mount
 import mlflow
+import pandas as pd
 from airflow.utils.trigger_rule import TriggerRule
 from mlflow.tracking import MlflowClient
 import requests
 import os
+from sklearn.metrics import f1_score
 
 
 DATA_VOLUME_NAME = os.getenv("DATA_VOLUME_NAME", "mlops_accidents_accidents-data")
@@ -16,8 +18,9 @@ MLFLOW_TRACKING_URI = "http://mlflow:5000"
 EXPERIMENT_NAME = "Gravité_Accidents"
 MODEL_NAME = "Modèle_Gravité_Accidents"
 DOCKER_NETWORK = "mlops_accidents_default"
+VALIDATION_DATA_DIR = "/opt/airflow/data/preprocessed"
 
-MAX_DROP_ALLOWED = 0.05
+
 
 
 default_args = {
@@ -29,8 +32,8 @@ default_args = {
 
 def check_metrics_and_alert(**context):
     """
-    Récupère le f1_score du dernier run de l'expérience 'Gravité_Accidents'
-    et le valide avant d'autoriser la mise en production.
+    Évalue le nouveau modèle et le champion sur le même jeu de validation,
+    puis décide si le nouveau modèle doit être promu.
     """
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
     client = MlflowClient()
@@ -53,12 +56,14 @@ def check_metrics_and_alert(**context):
         )
 
     current_run = runs[0]
-    current_f1 = current_run.data.metrics.get("f1_score")
     current_run_id = current_run.info.run_id
+    current_f1 = current_run.data.metrics.get("f1_score")
+
+    should_promote = True
 
     context["ti"].xcom_push(key="current_run_id", value=current_run_id)
     print(
-        f"Nouveau modèle entraîné détecté - Run ID: {current_run_id} | F1-Score: {current_f1}"
+        f"Nouveau modèle entraîné détecté - Run ID: {current_run_id} | F1-Score du run: {current_f1}"
     )
 
     if current_f1 is None:
@@ -66,26 +71,54 @@ def check_metrics_and_alert(**context):
             "Le dernier run MLflow n'a pas enregistré de métrique 'f1_score'."
         )
 
+    validation_features_path = os.path.join(VALIDATION_DATA_DIR, "X_test.csv")
+    validation_target_path = os.path.join(VALIDATION_DATA_DIR, "y_test.csv")
+
+    if not os.path.exists(validation_features_path) or not os.path.exists(validation_target_path):
+        raise AirflowFailException(
+            f"Fichiers de validation introuvables dans {VALIDATION_DATA_DIR}."
+        )
+
+    X_val = pd.read_csv(validation_features_path)
+    y_val = pd.read_csv(validation_target_path).values.ravel()
+
     try:
         prod_model_version = client.get_model_version_by_alias(MODEL_NAME, "champion")
-        prod_run = client.get_run(prod_model_version.run_id)
-        prod_f1 = prod_run.data.metrics.get("f1_score")
+        champion_model_uri = f"models:/{MODEL_NAME}@champion"
+        champion_model = mlflow.sklearn.load_model(champion_model_uri)
+        champion_pred = champion_model.predict(X_val)
+        champion_f1 = f1_score(y_val, champion_pred, average="weighted")
 
-        if prod_f1 and (prod_f1 - current_f1) > MAX_DROP_ALLOWED:
-            raise AirflowFailException(
-                f"ALERTE : Dégradation majeure des performances. "
-                f"Prod F1: {prod_f1:.3f} VS Nouveau F1: {current_f1:.3f}. Déploiement annulé."
-            )
-        print(f"Validation réussie par rapport à la Prod (F1 Prod: {prod_f1:.3f})")
-    except mlflow.exceptions.MlflowException:
-        print("Aucun modèle marqué '@champion' trouvé. Première promotion du projet.")
+        new_model = mlflow.sklearn.load_model(f"runs:/{current_run_id}/random_forest_model")
+        new_pred = new_model.predict(X_val)
+        new_f1 = f1_score(y_val, new_pred, average="weighted")
+
+        print(
+            f"Comparaison sur le même jeu de validation : "
+            f"Champion F1 = {champion_f1:.3f} | Nouveau F1 = {new_f1:.3f}"
+        )
+
+        if new_f1 < champion_f1:
+            should_promote = False
+            print("Le nouveau modèle est strictement moins bon que le champion sur les mêmes données de validation.")
+        else:
+            print("Le nouveau modèle a un F1 score au moins égal à celui du champion sur les mêmes données de validation.")
+    except mlflow.exceptions.MlflowException as exc:
+        print(f"Aucun modèle marqué '@champion' trouvé. Première promotion du projet. ({exc})")
+
+    context["ti"].xcom_push(key="should_promote", value=should_promote)
 
 
 def promote_model_to_champion(**context):
     """
-    Associe l'alias 'champion' à la dernière version du modèle validé.
-    Le conteneur ml-api (BentoML) se basera sur cet alias pour servir l'interface Streamlit.
+    Associe l'alias 'champion' à la dernière version du modèle validé
+    seulement si le nouveau modèle est meilleur que le champion.
     """
+    should_promote = context["ti"].xcom_pull(key="should_promote", task_ids="evaluate_metrics")
+    if should_promote is False:
+        print("Le modèle champion reste inchangé, car le nouveau modèle n'est pas meilleur.")
+        return
+
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
     client = MlflowClient()
 
