@@ -104,6 +104,21 @@ Le service `ml-api` basé sur BentoML expose un endpoint interne `/reload_model`
 
 ### Commandes principales
 
+Avant de lancer le pipeline, il est nécessaire de préparer le dossier de données à la racine du projet. Créez le dossier avec la commande suivante :
+
+```bash
+mkdir data
+```
+
+Puis placez-y les fichiers CSV de la source officielle :
+
+- `caracteristiques.csv`
+- `lieux.csv`
+- `usagers.csv`
+- `vehicules.csv`
+
+Ces fichiers peuvent être téléchargés depuis la plateforme officielle Data.gouv : https://www.data.gouv.fr/datasets/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024
+
 1. Build initial des images d'entraînement :
 
 ```bash
