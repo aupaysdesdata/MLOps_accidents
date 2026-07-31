@@ -145,6 +145,15 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    command:
+      - '-nginx.scrape-uri=http://nginx/stub_status' # Nécessite d'activer stub_status dans nginx.conf
+    ports:
+      - "9113:9113"
+    depends_on:
+      - nginx
+      
   prometheus:
     image: prom/prometheus:latest
     volumes:

@@ -14,4 +14,3 @@ scrape_configs:
 
     static_configs:
       - targets: ["ml-api:3000"]
-    # metrics_path: '/metrics'  <-- Optionnel car c'est la valeur par défaut
