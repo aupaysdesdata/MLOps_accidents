@@ -119,31 +119,40 @@ Puis placez-y les fichiers CSV de la source officielle :
 
 Ces fichiers peuvent être téléchargés depuis la plateforme officielle Data.gouv : https://www.data.gouv.fr/datasets/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024
 
-1. Build initial des images d'entraînement :
+1. Création des certificats Nginx :
+
+```bash
+mkdir -p src/nginx/certs
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout src/nginx/certs/nginx.key -out src/nginx/certs/nginx.crt -subj "//CN=localhost" -batch
+```
+
+Cette commande génère les fichiers `nginx.crt` et `nginx.key` nécessaires au reverse proxy HTTPS.
+
+2. Build initial des images d'entraînement :
 
 ```bash
 docker compose build
 ```
 
-2. Lancement de la stack complète :
+3. Lancement de la stack complète :
 
 ```bash
 docker compose up -d
 ```
 
-3. Vérification de l'état des conteneurs :
+4. Vérification de l'état des conteneurs :
 
 ```bash
 docker compose ps
 ```
 
-4. Consultation des logs (ex : Airflow ou ml-api) :
+5. Consultation des logs (ex : Airflow ou ml-api) :
 
 ```bash
 docker compose logs -f ml-api
 ```
 
-5. Arrêt et nettoyage complet (volumes inclus) :
+6. Arrêt et nettoyage complet (volumes inclus) :
 
 ```bash
 docker compose down -v
