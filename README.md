@@ -154,7 +154,7 @@ docker compose down -v
 Le dépôt intègre une pipeline CI GitHub Actions définie dans [.github/workflows/ci.yml](.github/workflows/ci.yml). Elle couvre deux validations principales :
 
 - une vérification de syntaxe Python avec `python -m py_compile $(find src -name "*.py")` ;
-- un build des images Docker via `docker compose build` lors des pull requests ciblant la branche `master`.
+- un build des images Docker via `docker compose build` lors des pull requests ciblant la branche `main`.
 
 Cette automatisation permet de détecter rapidement les erreurs de compilation ou de conteneurisation avant la fusion des changements.
 
