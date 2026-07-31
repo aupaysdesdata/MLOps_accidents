@@ -1,3 +1,6 @@
+# ----------------------------------------
+# Import bibliothèques
+# ----------------------------------------
 import os
 import bentoml
 import pandas as pd
@@ -7,30 +10,41 @@ from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_
 from starlette.responses import Response
 import mlflow
 
-# Métriques Prometheus
+# ----------------------------------------
+# 1. L'Infrastructure de Monitoring (Prometheus)
+# ----------------------------------------
+
+# Surveille le trafic HTTP global
 REQUEST_COUNT = Counter(
     "app_requests_total",
     "Total requests",
     labelnames=["method", "endpoint", "status"]
 )
 
+# Mesure la performance globale de l'API
 REQUEST_LATENCY = Histogram(
     "app_request_latency_seconds",
     "Request latency in seconds",
     buckets=(0.1, 0.5, 1.0, 2.0, 5.0)
 )
 
+# Surveiller la distribution des prédictions
 PREDICTIONS_TOTAL = Counter(
     "model_predictions_total",
     "Total predictions made",
-    labelnames=["model", "status"]
+    labelnames=["model", "status", "class"]
 )
 
+# Mesure uniquement le temps d'exécution du modèle
 PREDICTION_LATENCY = Histogram(
     "model_prediction_latency_seconds",
     "Model prediction latency",
     buckets=(0.01, 0.05, 0.1, 0.5, 1.0)
 )
+
+# ----------------------------------------
+# 2. Cycle de Vie du Modèle (MLflow & BentoML) & Prédiction (/predict)
+# ----------------------------------------
 
 mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
 MODEL_URI = "models:/Modèle_Gravité_Accidents@champion"
@@ -144,20 +158,29 @@ class PredictService:
             )
 
             pred = self.model.predict(x)
-
+            
             duration = time.perf_counter() - start
 
+            # Récupère la classe prédite (0 ou 1)
+            predicted_class = str(pred[0])
+
             # Mise à jour des métriques
-            PREDICTIONS_TOTAL.labels(model="RandomForest", status="success").inc()
+            labels_dict = {"model": "RandomForest", "status": "success", "class": predicted_class}
+            PREDICTIONS_TOTAL.labels(**labels_dict).inc()
             PREDICTION_LATENCY.observe(duration)
             REQUEST_COUNT.labels(method="POST", endpoint="/predict", status="success").inc()
 
             return {"prediction": pred.tolist()}
         
         except Exception as e:
-                PREDICTIONS_TOTAL.labels(model="RandomForest", status="error").inc()
+                labels_dict = {"model": "RandomForest", "status": "error"}
+                PREDICTIONS_TOTAL.labels(**labels_dict).inc()
+                REQUEST_COUNT.labels(method="POST", endpoint="/predict", status="error").inc()
                 raise
 
+# ----------------------------------------
+# 4. L'Exposition des Métriques
+# ----------------------------------------
     @staticmethod
     def on_asgi_app(app):
         from starlette.routing import Route
