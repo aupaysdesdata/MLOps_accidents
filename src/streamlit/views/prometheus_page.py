@@ -18,7 +18,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- EN-TÊTE : LE RÔLE STRATÉGIQUE ---
-st.markdown('<p class="main-header">📊 Prometheus : Le Système Nerveux de l\'Achitecture</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-header">Prometheus : Le système nerveux de l\'achitecture</p>', unsafe_allow_html=True)
 st.markdown("""
 Dans une architecture MLOps, les logs textuels ne suffisent pas : ils sont réactifs, pas proactifs.
 **Prometheus** agit comme notre cerveau analytique : il interroge nos services toutes les **15 secondes**, transforme les événements bruts en **séries temporelles** et permet de détecter les anomalies avant qu'elles n'impactent les utilisateurs.

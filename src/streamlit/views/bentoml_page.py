@@ -18,7 +18,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- EN-TÊTE : LA PROMESSE DE VALEUR ---
-st.markdown('<p class="main-header">🚀 BentoML : L\Industrialisation du Modèle</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-header">BentoML : L\'industrialisation du modèle</p>', unsafe_allow_html=True)
 st.markdown("""
 Le modèle entraîné sur MLflow ne suffit pas : il doit devenir un **service de production fiable**.
 BentoML est le moteur qui encapsule notre modèle pour lui offrir trois capacités critiques : **Valider**, **Évoluer**, et **S'Observer**.

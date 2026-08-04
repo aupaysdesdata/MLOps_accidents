@@ -20,7 +20,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- EN-TÊTE : MISSION & CONTEXTE ---
-st.markdown('<p class="main-header">🇫🇷 Prédiction de Gravité des Accidents</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-header">🇫🇷 Prédiction de gravité des accidents</p>', unsafe_allow_html=True)
 st.markdown("""
 <div style="text-align: center; font-size: 1.2rem; color: #555; margin-bottom: 2rem;">
     Déploiement d'une infrastructure MLOps complète pour l'aide à la décision en temps réel.
