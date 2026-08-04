@@ -21,7 +21,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- EN-TÊTE ---
-st.markdown('<p class="main-header">📈 Grafana : De la Donnée à la Décision</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-header">Grafana : De la donnée à la décision</p>', unsafe_allow_html=True)
 st.markdown("""
 Si Prometheus est le système nerveux qui collecte les signaux, **Grafana** est le cerveau qui les interprète.
 Il transforme les séries temporelles brutes en **tableaux de bord lisibles** et déclenche des **alertes automatiques** vers notre canal Discord lorsque des seuils critiques sont dépassés.

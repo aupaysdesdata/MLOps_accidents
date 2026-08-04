@@ -8,7 +8,7 @@ st.set_page_config(
     page_title="Intro & Données",
     page_icon="🇫🇷",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # --- STYLE PERSONNALISÉ ---
@@ -21,7 +21,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- EN-TÊTE : VISION GLOBALE (Fusion Objectif + Défi) ---
-st.markdown('<p class="main-header">🇫🇷 Prédiction de Gravité des Accidents</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-header">Prédiction de gravité des accidents</p>', unsafe_allow_html=True)
 st.markdown("""
 **Mission :** Déployer une infrastructure MLOps capable de prédire en temps réel si un accident nécessite une intervention **prioritaire**, afin d'optimiser l'envoi des secours.  
 **Enjeu :** Chaque minute compte. Nous automatisons le triage des accidents en exploitant les données déclarées par les forces de l'ordre (Fichier BAAC).
