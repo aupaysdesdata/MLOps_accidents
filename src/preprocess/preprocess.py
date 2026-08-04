@@ -290,7 +290,7 @@ def process_data(dataframes, output_folderpath):
             fusion1 = df_users
 
         if "grav" in fusion1.columns:
-            fusion1 = fusion1.sort_values(by="grav", ascending=False)
+            fusion1 = fusion1.sort_values(by="grav", ascending=False) # Attention si on change le mapping de gravité, il faudra ajuster le tri pour garder la ligne avec la gravité la plus sévère (2 = Tué)
         if "Num_Acc" in fusion1.columns:
             fusion1 = fusion1.drop_duplicates(subset=["Num_Acc"], keep="first")
 
@@ -314,7 +314,7 @@ def process_data(dataframes, output_folderpath):
 
         # Modifier la variable cible
         if "grav" in df.columns:
-            df["grav"] = df["grav"].replace([2, 3, 4], [0, 1, 1])
+            df["grav"] = df["grav"].replace([1, 2, 3, 4], [0, 1, 1, 1])
 
         # Remplacer les valeurs -1 et 0 par NaN
         col_to_replace0_na = ["trajet", "catv", "motor"]

@@ -130,6 +130,8 @@ services:
     depends_on:
       ml-api:
         condition: service_started
+    volumes:
+      - ./src/streamlit:/app
 
   nginx:
     build:
@@ -182,8 +184,6 @@ services:
     depends_on:
       prometheus:
         condition: service_started
-
-
 
 volumes:
   postgres-airflow-data:
