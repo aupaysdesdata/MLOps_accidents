@@ -175,6 +175,7 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_SECURITY_ADMIN_USER: admin
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
@@ -184,6 +185,25 @@ services:
     depends_on:
       prometheus:
         condition: service_started
+
+  grafana-init:
+      image: curlimages/curl:latest
+      container_name: grafana-init-job
+      environment:
+        # Récupère la variable depuis .env
+        - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      volumes:
+        - ./src/grafana/alert-error-rate.json:/alert-rules/alert-error-rate.json
+        - ./src/grafana/alert-latency.json:/alert-rules/alert-latency.json
+        - ./src/grafana/init-alerts.sh:/init-alerts.sh
+        - ./src/grafana/notification-policies.json:/config/notification-policies.json
+        - ./src/grafana/contact-points.json:/config/contact-points.json
+      command: >
+        sh /init-alerts.sh
+      depends_on:
+        grafana:
+          condition: service_started  # Attend que Grafana ait démarré
+      restart: "no"
 
 volumes:
   postgres-airflow-data:
