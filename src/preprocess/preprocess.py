@@ -290,7 +290,10 @@ def process_data(dataframes, output_folderpath):
             fusion1 = df_users
 
         if "grav" in fusion1.columns:
-            fusion1 = fusion1.sort_values(by="grav", ascending=False) # Attention si on change le mapping de gravité, il faudra ajuster le tri pour garder la ligne avec la gravité la plus sévère (2 = Tué)
+            # Modifier la variable cible
+            fusion1["grav"] = fusion1["grav"].replace([2, 4], [4, 2])  # Inverser les valeurs 2 et 4
+            # Garder la ligne avec la gravité la plus sévère pour chaque accident
+            fusion1 = fusion1.sort_values(by="grav", ascending=False)
         if "Num_Acc" in fusion1.columns:
             fusion1 = fusion1.drop_duplicates(subset=["Num_Acc"], keep="first")
 
@@ -314,7 +317,8 @@ def process_data(dataframes, output_folderpath):
 
         # Modifier la variable cible
         if "grav" in df.columns:
-            df["grav"] = df["grav"].replace([1, 2, 3, 4], [0, 1, 1, 1])
+            df["grav"] = df["grav"].replace([1, 2, 3, 4], [0, 0, 1, 1]) # indemne (0), blessé léger (0), blessé hospitalisé (1), tué (1)
+            # df["grav"] = df["grav"].replace([1, 2, 3, 4], [0, 1, 1, 1]) # indemne (0), blessé léger (1), blessé hospitalisé (1), tué (1)
 
         # Remplacer les valeurs -1 et 0 par NaN
         col_to_replace0_na = ["trajet", "catv", "motor"]
