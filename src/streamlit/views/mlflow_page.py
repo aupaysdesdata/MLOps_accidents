@@ -43,6 +43,12 @@ st.markdown(
     """
 )
 
+m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+m_col1.metric("Accuracy", "81.19 %")
+m_col2.metric("Precision", "80.85 %")
+m_col3.metric("Recall", "81.19 %")
+m_col4.metric("F1-Score", "80.88 %")
+
 st.code(
     """
 with mlflow.start_run(run_name='Random Forest') as run:
