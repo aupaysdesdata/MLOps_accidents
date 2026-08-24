@@ -2,8 +2,7 @@ import streamlit as st
 
 # Configuration de la page
 st.set_page_config(
-    page_title="Nginx - Reverse Proxy & Sécurité",
-    page_icon="",
+    page_title="MLOps Accidents - Nginx - Reverse Proxy & Sécurité",
     layout="wide",
     initial_sidebar_state="expanded",
 )

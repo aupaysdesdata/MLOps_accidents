@@ -5,8 +5,7 @@ from pathlib import Path
 
 # Configuration de la page
 st.set_page_config(
-    page_title="Intro & Données",
-    page_icon="🇫🇷",
+    page_title="MLOps Accidents - Données & Préprocessing",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -35,19 +34,23 @@ col1, col2 = st.columns([1, 1])
 with col1:
     st.markdown('<p class="sub-header">1. Stratégie de Classification</p>', unsafe_allow_html=True)
     st.info("""
-    Pour garantir un **taux de faux négatifs quasi-nul** (ne rater aucun accident grave), nous avons adopté une approche de "Principe de Précaution" :
-    - 🔴 **Classe 1 (Prioritaire)** : Tué, Hospitalisé, **et** Blessé léger.
-    - 🟢 **Classe 0 (Non-Prioritaire)** : Uniquement Indemne.
+    La prédiction détermine la priorité selon le cas le plus grave des personnes impliquées dans l'accident :
+    - 🔴 **Classe 1 (Prioritaire)** : **Au moins un** Tué **ou** Hospitalisé.
+    - 🟢 **Classe 0 (Non-Prioritaire)** : **Uniquement** Indemnes **et / ou** Blessés légers.
     
-    *Mieux vaut sur-alerter que sous-estimer la gravité.*
+    *Pas ou peu d'accidents avec seulement des personnes indemnes, car le jeu de données est biaisé vers les cas graves.*
+    Cela signifie que les accidents avec 100% de personnes indemnes ne sont pas complétées entièrement par les forces de l'ordre et sont soit absents du fichier BAAc, soit supprimés par le preprocessing
     """)
     
     st.markdown('<p class="sub-header">2. Source & Qualité</p>', unsafe_allow_html=True)
     st.markdown("""
-    - **Source :** [data.gouv.fr - ONISR](https://www.data.gouv.fr/datasets/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024) (Fichier BAAC).
+    - **Source :** Bases de Données Annuelles des Accidents Corporels de la Circulation Routière ([Fichier BAAC - data.gouv.fr - ONISR](https://www.data.gouv.fr/datasets/bases-de-donnees-annuelles-des-accidents-corporels-de-la-circulation-routiere-annees-de-2005-a-2024)).
     - **Période :** 2021-2024 (Uniformité des formats).
-    - **Volume Brut :** ~500k usagers, ~220k accidents.
-    - **Nettoyage Critique :** Suppression des doublons (fichier 2022) et des cibles inconnues (`grav = -1`).
+    - **Volume Brut :** ~506k usagers, ~220k accidents.
+    - **Nettoyage Critique** :
+        - Suppression des doublons (fichier 2022) 
+        - Suppression cibles inconnues (`grav = -1`)
+        - Supression données critiques manquantes (ex : `lat`, `long`) --> Accidents avec 100% indemnes fortement concernés 
     """)
 
 with col2:
@@ -98,7 +101,8 @@ with st.expander("🔍 Détails techniques du pipeline", expanded=True):
 # Agrégation : 'nb_victim', 'nb_vehicules' (par accident)
 # Encodage : Regroupement véhicules (38 -> 6 classes)
 # Calcul : Âge victime (avec filtre outliers <0 ou >120)
-        """, language="python")
+# Variable cible : `replace([1, 2, 3, 4], [0, 0, 1, 1])` pour avoir indemne (0), blessé léger (0), blessé hospitalisé (1), tué (1)
+       """, language="python")
 
     with c2:
         st.markdown("**Étape 3 : Gestion des Doublons**")
@@ -111,8 +115,8 @@ with st.expander("🔍 Détails techniques du pipeline", expanded=True):
         st.markdown("**Étape 4 : Recodage Sémantique**")
         st.code("""
 # Conversion Corse : '2A'/'2B' -> '201'/'202'
-# Cible Binaire "Sécurisée" :
-#   1 (Indemne) -> 0
+# Cible Binaire :
+#   1 (Indemne) et (Blessé léger) -> 0 (Non Prioritaire)
 #   2, 3, 4 (Toute blessure) -> 1
 # Drop : Colonnes ID, adresses, NaN critiques
         """, language="python")
@@ -120,7 +124,7 @@ with st.expander("🔍 Détails techniques du pipeline", expanded=True):
 st.divider()
 
 # --- STATISTIQUES & EDA ---
-st.markdown('<p class="sub-header">5. Résultats de l\EDA & Dataset Final</p>', unsafe_allow_html=True)
+st.markdown('<p class="sub-header">5. Résultats de l\'EDA & Dataset Final</p>', unsafe_allow_html=True)
 
 # Métriques
 col_stat1, col_stat2, col_stat3, col_stat4 = st.columns(4)

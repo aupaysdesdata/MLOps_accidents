@@ -4,17 +4,18 @@
   "folderUID": "mlops-alerts-folder",
   "ruleGroup": "MLOps_Alerts",
   "uid": "alert_error_rate",
-  "condition": "C",
+  "condition": "B",
   "data": [
     {
       "refId": "A",
       "relativeTimeRange": { "from": 600, "to": 0 },
       "datasourceUid": "prometheus",
       "model": {
-        "expr": "sum(rate(app_requests_total{endpoint=\"/predict\", status=\"error\"}[5m])) or vector(0)",
+        "expr": "sum(rate(app_requests_total{endpoint=\"/predict\", status=\"error\"}[5m])) / (sum(rate(app_requests_total{endpoint=\"/predict\"}[5m])) or vector(1)) * 100",
         "instant": true,
         "legendFormat": "__auto",
-        "range": false
+        "range": false,
+        "refId": "A"
       }
     },
     {
@@ -22,25 +23,9 @@
       "relativeTimeRange": { "from": 600, "to": 0 },
       "datasourceUid": "__expr__",
       "model": {
-        "type": "math",
-        "expression": "$A / (sum(rate(app_requests_total{endpoint=\"/predict\"}[5m])) or vector(1)) * 100"
-      }
-    },
-    {
-      "refId": "C",
-      "relativeTimeRange": { "from": 600, "to": 0 },
-      "datasourceUid": "__expr__",
-      "model": {
         "type": "threshold",
-        "expression": "$B",
-        "settings": {
-          "thresholds": [
-            {
-              "value": 5,
-              "operator": "gt"
-            }
-          ]
-        }
+        "expression": "$A > 5",
+        "refId": "B"
       }
     }
   ],

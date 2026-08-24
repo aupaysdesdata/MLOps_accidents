@@ -1,8 +1,7 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="MLflow / Entraînement",
-    page_icon="🟡",
+    page_title="MLOps Accidents - MLflow / Entraînement",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -10,7 +9,7 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .main-header {font-size: 2.8rem; font-weight: bold; color: #d6a700; margin-bottom: 0.75rem;}
+    .main-header {font-size: 2.8rem; font-weight: bold; color: #1f77b4; margin-bottom: 0.75rem;}
     .sub-header {font-size: 1.5rem; font-weight: 600; color: #333; margin-top: 1.75rem;}
     .info-box {background-color: #fff9db; border-left: 5px solid #d6a700; padding: 1rem; border-radius: 8px; margin: 1rem 0;}
     .code-box {background-color: #f7f7f7; padding: 1rem; border-radius: 8px; border: 1px solid #e0e0e0;}

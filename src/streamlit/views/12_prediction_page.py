@@ -7,8 +7,7 @@ import streamlit as st
 
 # Configuration de la page
 st.set_page_config(
-    page_title="Prédiction - Gravité d'un accident",
-    page_icon="🚨",
+    page_title="MLOps Accidents - Prédiction - Gravité d'un accident",
     layout="wide",
     initial_sidebar_state="expanded",
 )
