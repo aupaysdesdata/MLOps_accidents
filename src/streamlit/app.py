@@ -9,6 +9,7 @@ pages = [
     st.Page("views/docker_page.py", title="Docker"),
     st.Page("views/mlflow_page.py", title="MLflow / Entraînement"),
     st.Page("views/airflow_page.py", title="Airflow"),
+    st.Page("views/data_drift_page.py", title="Data Drift"),
     st.Page("views/bentoml_page.py", title="BentoML"),
     st.Page("views/nginx_page.py", title="Nginx"),
     st.Page("views/prometheus_page.py", title="Prometheus"),
