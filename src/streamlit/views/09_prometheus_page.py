@@ -2,8 +2,7 @@ import streamlit as st
 
 # Configuration de la page
 st.set_page_config(
-    page_title="Prometheus - Collecte & Métriques",
-    page_icon="📊",
+    page_title="MLOps Accidents - Prometheus - Collecte & Métriques",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -11,7 +10,7 @@ st.set_page_config(
 # --- STYLE ---
 st.markdown("""
     <style>
-    .main-header {font-size: 2.5rem; font-weight: bold; color: #E6522C; margin-bottom: 1rem;}
+    .main-header {font-size: 2.5rem; font-weight: bold; color: #1f77b4; margin-bottom: 1rem;}
     .sub-header {font-size: 1.5rem; font-weight: 600; color: #2c3e50; margin-top: 2rem;}
     .metric-card {background-color: #f8f9fa; padding: 1.5rem; border-radius: 8px; border-left: 5px solid #E6522C; height: 100%;}
     </style>

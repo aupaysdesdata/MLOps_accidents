@@ -185,24 +185,36 @@ services:
     depends_on:
       prometheus:
         condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   grafana-init:
-      image: curlimages/curl:latest
+      build:
+        context: src/grafana
+        dockerfile: Dockerfile
       container_name: grafana-init-job
       environment:
         # Récupère la variable depuis .env
         - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+        - GRAFANA_URL=http://${ID_GRAFANA}:${MP_GRAFANA}@grafana:3000
       volumes:
+        # Correction des chemins pour correspondre au script Python
+        # Le script s'attend à trouver les règles dans /alert-rules/
         - ./src/grafana/alert-error-rate.json:/alert-rules/alert-error-rate.json
         - ./src/grafana/alert-latency.json:/alert-rules/alert-latency.json
-        - ./src/grafana/init-alerts.sh:/init-alerts.sh
+        # Le script est monté à la racine /app/ pour correspondre au CMD et au WORKDIR
+        - ./src/grafana/init_grafana_alerts.py:/app/init_grafana_alerts.py
+        # Si vous avez vraiment besoin de ces fichiers JSON séparés (le script Python actuel ne les lit pas directement)
         - ./src/grafana/notification-policies.json:/config/notification-policies.json
         - ./src/grafana/contact-points.json:/config/contact-points.json
-      command: >
-        sh /init-alerts.sh
+      command: python /app/init_grafana_alerts.py
       depends_on:
         grafana:
-          condition: service_started  # Attend que Grafana ait démarré
+          condition: service_healthy  # Attend que Grafana soit prêt
       restart: "no"
 
 volumes:

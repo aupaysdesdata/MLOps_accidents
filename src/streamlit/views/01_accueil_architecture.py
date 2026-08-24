@@ -2,8 +2,7 @@ import streamlit as st
 
 # Configuration de la page
 st.set_page_config(
-    page_title="MLOps Accidents - Vue d'Ensemble",
-    page_icon="🇫🇷",
+    page_title="MLOps Accidents",
     layout="wide",
     initial_sidebar_state="collapsed" # On commence en plein écran pour l'impact
 )
