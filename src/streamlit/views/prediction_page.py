@@ -5,13 +5,76 @@ import pandas as pd
 import requests
 import streamlit as st
 
-st.title("Prédiction")
-st.markdown(
-    "Estime la gravité d'un accident à partir de ses caractéristiques, "
-    "saisies manuellement ou importées depuis un fichier JSON."
+# Configuration de la page
+st.set_page_config(
+    page_title="Prédiction - Gravité d'un accident",
+    page_icon="🚨",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
+# --- STYLE ---
+st.markdown(
+    """
+    <style>
+    .main-header {font-size: 2.5rem; font-weight: bold; color: #1f77b4; margin-bottom: 1rem;}
+    .sub-header {font-size: 1.5rem; font-weight: 600; color: #2c3e50; margin-top: 2rem;}
+    .value-card {background-color: #f8f9fa; padding: 1.5rem; border-radius: 8px; border-left: 5px solid #cf222e; height: 100%;}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# --- EN-TÊTE ---
+st.markdown(
+    '<p class="main-header">Prédiction : estimer la gravité d\'un accident</p>',
+    unsafe_allow_html=True,
+)
+st.markdown("""
+Cette page interroge le modèle de Machine Learning via l'**API BentoML** (exposée en interne, derrière Nginx)
+pour estimer si un accident est **prioritaire** ou **non-prioritaire**. Les caractéristiques de l'accident
+peuvent être saisies via un **formulaire**, ou importées depuis un **fichier JSON**.
+""")
+
 st.divider()
+
+# --- SECTION 1 : DEUX SOURCES DE PARAMÈTRES ---
+st.markdown(
+    '<p class="sub-header">1. Deux façons de renseigner les données</p>',
+    unsafe_allow_html=True,
+)
+
+col_a, col_b = st.columns(2)
+
+with col_a:
+    st.markdown("### Formulaire")
+    st.markdown("""
+    Une trentaine de champs, répartis en 3 blocs :
+    - **Contexte général** (usager, sécurité, victimes...)
+    - **Véhicule & route** (type de véhicule, revêtement...)
+    - **Localisation & conditions** (date, heure, météo, coordonnées GPS...)
+
+    Chaque champ technique est traduit en langage clair (menus déroulants), même si c'est bien
+    un code numérique qui est envoyé au modèle.
+    """)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with col_b:
+    st.markdown("### Fichier JSON")
+    st.markdown("""
+    Import direct d'un objet JSON contenant les mêmes champs que le formulaire.
+    - Les champs obligatoires sont vérifiés automatiquement à l'upload.
+    - Si un champ manque, la prédiction est bloquée et le champ manquant est listé.
+    - Utile pour rejouer rapidement plusieurs cas de test, un fichier à la fois.
+    """)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+st.divider()
+
+# --- SECTION 2 : TEST INTERACTIF ---
+st.markdown(
+    '<p class="sub-header">2. Tester une prédiction</p>', unsafe_allow_html=True
+)
 
 API_URL = os.getenv("MODEL_API_URL")
 
@@ -229,7 +292,9 @@ if source == "Formulaire":
             year_acc = st.number_input("Année accident (year_acc)", value=2021, step=1)
             victim_age = st.number_input("Âge victime (victim_age)", value=30, step=1)
             nb_victim = st.number_input("Nb victimes (nb_victim)", value=1, step=1)
-            nb_vehicules = st.number_input("Nb véhicules (nb_vehicules)", value=1, step=1)
+            nb_vehicules = st.number_input(
+                "Nb véhicules (nb_vehicules)", value=1, step=1
+            )
 
         with col2:
             st.markdown("**Véhicule & route**")
@@ -240,10 +305,14 @@ if source == "Formulaire":
                 index=2,
             )
             obsm = st.selectbox(
-                "Obstacle mobile (obsm)", options=list(OBSM), format_func=lambda x: OBSM[x]
+                "Obstacle mobile (obsm)",
+                options=list(OBSM),
+                format_func=lambda x: OBSM[x],
             )
             motor = st.selectbox(
-                "Motorisation (motor)", options=list(MOTOR), format_func=lambda x: MOTOR[x]
+                "Motorisation (motor)",
+                options=list(MOTOR),
+                format_func=lambda x: MOTOR[x],
             )
             catr = st.selectbox(
                 "Catégorie route (catr)",
