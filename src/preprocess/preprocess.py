@@ -394,7 +394,7 @@ def process_data(dataframes, output_folderpath):
         feats = df.drop(["grav"], axis=1)
 
         # Sauvegarde du dataset complet prétraité à la racine du dossier data
-        root_data_path = os.path.join(os.getcwd(), "data")
+        root_data_path = os.path.join(os.getcwd(), "data/preprocessed")
         os.makedirs(root_data_path, exist_ok=True)
         
         output_final_df = os.path.join(root_data_path, "preprocessed.csv")
