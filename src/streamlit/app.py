@@ -13,7 +13,7 @@ pages = [
     st.Page("views/08_nginx_page.py", title="Nginx"),
     st.Page("views/09_prometheus_page.py", title="Prometheus"),
     st.Page("views/10_grafana_page.py", title="Grafana"),
-    st.Page("views/11_data_drift_page.py", title="Evidently"),
+    st.Page("views/11_data_drift_page.py", title="Data drift"),
     st.Page("views/12_prediction_page.py", title="App de Prédiction"),
 ]
 
