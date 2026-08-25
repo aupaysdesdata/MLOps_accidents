@@ -27,7 +27,7 @@ st.markdown(
 st.markdown("""
 Aucun des services applicatifs (**Streamlit**, **BentoML**) n'est exposé directement sur Internet.
 **Nginx** agit comme unique point d'entrée public de la stack : il termine le HTTPS, route les requêtes
-vers le bon service interne, protège l'API contre les abus, et alimente même le monitoring.
+vers le bon service interne et protège l'API contre les abus.
 """)
 
 st.divider()
@@ -49,7 +49,6 @@ with col_role:
     | :--- | :--- | :--- |
     | `/` | `streamlit:8501` | Interface utilisateur de démonstration |
     | `/predict` | `ml-api:3000` | Endpoint de prédiction BentoML |
-    | `/stub_status` | Nginx lui-même | Métriques internes pour Prometheus |
 
     **Avantage :** les conteneurs `streamlit` et `ml-api` n'ont besoin d'aucun port publié — ils restent
     injoignables depuis l'extérieur du réseau Docker.
@@ -177,53 +176,10 @@ directement `429 Too Many Requests` sans même solliciter Streamlit ou BentoML.
 
 st.divider()
 
-# --- SECTION 4 : INTEGRATION MONITORING ---
-st.markdown(
-    '<p class="sub-header">4. Nginx dans la boucle de monitoring</p>',
-    unsafe_allow_html=True,
-)
-
-col_mon1, col_mon2 = st.columns([1, 1])
-
-with col_mon1:
-    st.markdown("""
-    Nginx expose son propre statut interne via `location /stub_status`. Ce point n'est pas destiné aux
-    utilisateurs : il est scrappé par le service dédié `nginx-exporter`
-    (image `nginx/nginx-prometheus-exporter`), qui traduit ces données au format Prometheus.
-
-    **Flux complet :**
-    1. `nginx-exporter` interroge `http://nginx/stub_status`.
-    2. Il expose les métriques converties sur le port `9113`.
-    3. **Prometheus** scrape cet endpoint et alimente **Grafana**.
-
-    Nginx n'est donc pas seulement une façade réseau : il fait aussi partie des briques observées par le
-    système de monitoring, au même titre que BentoML.
-    """)
-
-with col_mon2:
-    st.graphviz_chart("""
-    digraph Mon {
-        rankdir=LR;
-        node [shape=box, style=filled, fontname="Arial", penwidth=2];
-        edge [fontsize=10, color="#555"];
-
-        Nginx [label=" Nginx\\n/stub_status", fillcolor="#009639", fontcolor="white"];
-        Exporter [label=" nginx-exporter\\n(port 9113)", fillcolor="#6a5acd", fontcolor="white"];
-        Prometheus [label=" Prometheus", fillcolor="#E6522C", fontcolor="white"];
-        Grafana [label=" Grafana", fillcolor="#F46800", fontcolor="white"];
-
-        Nginx -> Exporter [label="scrape stub_status"];
-        Exporter -> Prometheus [label="/metrics"];
-        Prometheus -> Grafana;
-    }
-    """)
-
-st.divider()
-
 # --- CONCLUSION ---
 st.success("""
  **Synthèse :**
 Nginx protège la stack en réduisant sa surface d'exposition à un unique point d'entrée chiffré. Il assure
-trois rôles complémentaires : **routage** (vers Streamlit et BentoML), **sécurité** (TLS, en-têtes HTTP,
-rate limiting anti-abus) et **observabilité** (export de ses propres métriques vers Prometheus/Grafana).
+deux rôles complémentaires : **routage** (vers Streamlit et BentoML) et **sécurité** (TLS, en-têtes HTTP,
+rate limiting anti-abus).
 """)
