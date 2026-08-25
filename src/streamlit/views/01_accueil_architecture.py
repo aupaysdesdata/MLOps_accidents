@@ -5,7 +5,7 @@ import streamlit_mermaid as stmd
 st.set_page_config(
     page_title="MLOps Accidents",
     layout="wide",
-    initial_sidebar_state="collapsed" # On commence en plein écran pour l'impact
+    initial_sidebar_state="expanded"
 )
 
 # --- STYLE ---
