@@ -2,159 +2,138 @@ import streamlit as st
 
 # Configuration de la page
 st.set_page_config(
-    page_title="MLOps Accidents - BentoML",
+    page_title="MLOps Accidents - Serving BentoML",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
-# --- STYLE ---
+# --- STYLE PERSONNALISÉ ---
 st.markdown("""
     <style>
     .main-header {font-size: 2.5rem; font-weight: bold; color: #1f77b4; margin-bottom: 1rem;}
     .sub-header {font-size: 1.5rem; font-weight: 600; color: #2c3e50; margin-top: 2rem;}
-    .value-card {background-color: #f8f9fa; padding: 1.5rem; border-radius: 8px; border-left: 5px solid #FF5A5F; height: 100%;}
+    .metric-card {background-color: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #e9ecef;}
     </style>
     """, unsafe_allow_html=True)
 
-# --- EN-TÊTE : LA PROMESSE DE VALEUR ---
-st.markdown('<p class="main-header">BentoML : L\'industrialisation du modèle</p>', unsafe_allow_html=True)
+# --- EN-TÊTE ---
+st.markdown('<p class="main-header">Serving de Modèle avec BentoML</p>', unsafe_allow_html=True)
+
 st.markdown("""
-Le modèle entraîné sur MLflow ne suffit pas : il doit devenir un **service de production fiable**.
-BentoML est le moteur qui encapsule notre modèle pour lui offrir trois capacités critiques : **Valider**, **Évoluer**, et **S'Observer**.
+BentoML est le cœur de notre architecture de **Serving**. Il transforme le modèle entraîné (MLflow) en une API microservice robuste, conteneurisée et instrumentée pour le monitoring.
 """)
 
 st.divider()
 
-# --- SECTION 1 : LES 3 CAPACITÉS CLÉS (NARRATIVE MÉTIER) ---
-st.markdown('<p class="sub-header">1. Les 3 Capacités Critiques pour la Production</p>', unsafe_allow_html=True)
+# --- 1. RÔLE DANS L'ARCHITECTURE ---
+st.markdown('<p class="sub-header">1. Positionnement & Flux de Données</p>', unsafe_allow_html=True)
 
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns([1, 2])
 
 with col1:
-    st.markdown('<div class="value-card">', unsafe_allow_html=True)
-    st.markdown("### 🛡️ 1. Validation & Robustesse")
     st.markdown("""
-    **Problème :** Une API ouverte reçoit n'importe quelle donnée.
-    **Solution BentoML + Pydantic :** Un contrat de données strict.
-    - Rejet automatique des formats incorrects (Erreur 422).
-    - Typage fort des 28 features attendues.
-    - *Gain :* L'API ne plante jamais à cause d'une entrée utilisateur.
+    **Fonctions Clés :**
+    - 📦 **Conteneurisation :** Image Docker dédiée (`src/bentoml/Dockerfile`).
+    - 🔄 **Chargement Dynamique :** Récupère le modèle "Champion" depuis MLflow au démarrage.
+    - 🚀 **API Haute Performance :** Exposition native d'endpoints (`/predict`, `/reload_model`).
+    - 📊 **Instrumentation :** Exposition native des métriques Prometheus (`/metrics`).
     """)
-    st.code("""
-class InputModel(BaseModel):
-    victim_age: int
-    lat: float
-    # ... 28 features typées
-    """, language="python")
-    st.markdown("</div>", unsafe_allow_html=True)
 
 with col2:
-    st.markdown('<div class="value-card">', unsafe_allow_html=True)
-    st.markdown("### 🔄 2. Mise à Jour Continue")
+    # Schéma du flux BentoML
+    mermaid_flow = """
+    flowchart LR
+        Airflow["Airflow<br/>Orchestrateur"] -->|Trigger & Reload| Bento
+        MLflow["MLflow<br/>Registry"] -->|Load Model| Bento
+        Bento["((BentoML Service<br/>Port 3000))"] -->|Expose /metrics| Promo["Prometheus"]
+        Bento -->|Serve Predictions| Nginx["Nginx / Frontend"]
+        
+        style Bento fill:#e3f2fd,stroke:#1f77b4,stroke-width:3px
+        style MLflow fill:#f8f9fa,stroke:#6c757d
+        style Airflow fill:#f8f9fa,stroke:#6c757d
+        style Promo fill:#f8f9fa,stroke:#6c757d
+        style Nginx fill:#f8f9fa,stroke:#6c757d
+    """
+    st.mermaid_chart(mermaid_flow)
+    st.caption("BentoML agit comme le pont entre le Registry (MLflow), l'Orchestrateur (Airflow) et le Monitoring.")
+
+st.divider()
+
+# --- 2. ENDPOINTS & LOGIQUE MÉTIER ---
+st.markdown('<p class="sub-header">2. Endpoints Exposés (`service.py`)</p>', unsafe_allow_html=True)
+
+tab_pred, tab_reload = st.tabs(["🔮 /predict (Inférence)", "🔄 /reload_model (Mise à jour)"])
+
+with tab_pred:
     st.markdown("""
-    **Problème :** Redémarrer un service pour changer de modèle crée des interruptions.
-    **Solution BentoML :** Rechargement à chaud en mémoire.
-    - Endpoint `/reload_model` déclenché par **Airflow**.
-    - **Mécanisme de Sécurité (Fallback) :** Si le nouveau modèle 'Champion' échoue, on garde l'ancien 'Latest'.
-    - *Gain :* Mise à jour limitant les interruptions de service.
+    **Endpoint :** `POST /predict`
+    
+    **Logique :**
+    1.  **Validation :** Vérification stricte du schema d'entrée via **Pydantic** (28 features attendues).
+    2.  **Inférence :** Prédiction temps réel avec le modèle Scikit-Learn chargé en mémoire.
+    3.  **Observabilité :** 
+        - Incrémentation du compteur `model_predictions_total` (succès/erreur/classe).
+        - Mesure de la latence d'inférence (`model_prediction_latency_seconds`).
+    
+    **Exemple de Payload :**
     """)
     st.code("""
+{
+  "place": 1, "catu": 2, "sexe": 1, "secu1": 2, 
+  "year_acc": 2023, "victim_age": 35, "catv": 1, 
+  ... (21 autres features) ...
+  "nb_victim": 1, "nb_vehicules": 1
+}
+    """, language="json")
+
+with tab_reload:
+    st.markdown("""
+    **Endpoint :** `GET /reload_model`
+    
+    **Cas d'usage :** Appelé automatiquement par **Airflow** après un ré-entraînement réussi.
+    
+    **Logique :**
+    1.  Connexion à MLflow (`models:/Modèle_Gravité_Accidents@champion`).
+    2.  Chargement du nouveau modèle en mémoire **sans redémarrer le container**.
+    3.  Bascule immédiate vers la nouvelle version pour les requêtes suivantes.
+    
+    **Avantage MLOps :** Zéro downtime lors des mises en production de modèles.
+    """)
+    st.code("""
+# Extrait service.py
 @bentoml.api(route="/reload_model")
-def reload_model(self):
-    try:
-        self.model = mlflow.load_model("...@champion")
-    except Exception:
-        # Fallback de sécurité
-        self.model = mlflow.load_model("...@latest")
-    return {"status": "ok"}
+def reload_model(self) -> dict:
+    self._load_model() # Charge depuis MLflow
+    return {"status": "success"}
     """, language="python")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-with col3:
-    st.markdown('<div class="value-card">', unsafe_allow_html=True)
-    st.markdown("### 📊 3. Observabilité Native")
-    st.markdown("""
-    **Problème :** Une API "muette" est impossible à maintenir.
-    **Solution BentoML :** Instrumentation automatique pour **Prometheus**.
-    - Métriques de trafic, latence et distribution des classes.
-    - Endpoint `/metrics` exposé uniquement au réseau interne.
-    - *Gain :* Détection immédiate des dérives (Drift) ou ralentissements.
-    """)
-    st.code("""
-# Exemple de métrique exposée
-PREDICTIONS_TOTAL.labels(
-    class=pred_class
-).inc()
-    """, language="python")
-    st.markdown("</div>", unsafe_allow_html=True)
 
 st.divider()
 
-# --- SECTION 2 : INTÉGRATION SÉCURISÉE (LIEN AVEC NGINX/AIRFLOW) ---
-st.markdown('<p class="sub-header">2. Intégration dans l\Architecture Globale</p>', unsafe_allow_html=True)
+# --- 3. OBSERVABILITÉ & MÉTRIQUES CUSTOM ---
+st.markdown('<p class="sub-header">3. Instrumentation Native pour Prometheus</p>', unsafe_allow_html=True)
+
 st.markdown("""
-BentoML n'est pas exposé directement. Il agit comme un moteur interne protégé par les autres briques du projet (**Nginx**, **Airflow**, **Prometheus**).
+Contrairement à un serveur Flask classique, BentoML permet d'exposer nativement un endpoint `/metrics` scrapé par Prometheus. Nous avons défini 4 métriques critiques :
 """)
 
-col_sec, col_diag = st.columns([1, 1])
+col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 
-with col_sec:
-    st.markdown("""
-    ### Le Principe de "Défense en Profondeur"
-    
-    Le conteneur BentoML est isolé dans un réseau Docker privé. Ses interfaces sont spécialisées :
-    
-    1.  **Flux Utilisateur (`/predict`) :** 
-        - Accessible uniquement via le Reverse Proxy **Nginx**.
-        - La documentation Swagger (`/docs`) est volontairement masquée publiquement.
-        
-    2.  **Flux MLOps (`/reload_model`) :** 
-        - Accessible uniquement par le conteneur **Airflow**.
-        - Garantit que seul le pipeline validé peut mettre à jour le modèle.
-        
-    3.  **Flux Monitoring (`/metrics`) :** 
-        - Accessible uniquement par **Prometheus**.
-        - Empêche toute interrogation externe des métriques internes.
-        
-    ✅ **Résultat :** BentoML se concentre sur son métier (prédire), tandis que la sécurité et l'orchestration sont déléguées aux briques spécialisées.
-    """)
+with col_m1:
+    st.markdown("**📈 Trafic API**")
+    st.code("app_requests_total\n[method, endpoint, status]", language="text")
+    st.caption("Surveille le volume et les erreurs HTTP globales.")
 
-with col_diag:
-    st.markdown("### Vue des Flux Inter-Briques")
-    # Diagramme simplifié pour montrer uniquement qui appelle BentoML
-    st.graphviz_chart("""
-    digraph Flux {
-        rankdir=LR;
-        node [shape=box, style=filled, fontname="Arial", penwidth=2];
-        edge [fontsize=10, color="#555"];
-        
-        % External
-        Nginx [label="🟢 Nginx\\n(Garde-fou)", fillcolor="#009639", fontcolor="white"];
-        
-        % Internal
-        subgraph cluster_bento {
-            label="Conteneur BentoML";
-            style=dashed;
-            color=gray;
-            BentoML [label="🟡 API Modèle\\n/predict\\n/reload\\n/metrics", fillcolor="#f1c232"];
-        }
-        
-        % Actors
-        Airflow [label="🟠 Airflow\\n(CI/CD)", fillcolor="#e69138"];
-        Prometheus [label="🟣 Prometheus\\n(Monitoring)", fillcolor="#9900ff", fontcolor="white"];
-        
-        % Flows
-        Nginx -> BentoML [label="HTTPS\\n/predict"];
-        Airflow -> BentoML [label="HTTP\\n/reload_model"];
-        Prometheus -> BentoML [label="HTTP\\n/metrics"];
-    }
-    """)
+with col_m2:
+    st.markdown("**⏱️ Latence API**")
+    st.code("app_request_latency_seconds\n[buckets]", language="text")
+    st.caption("Performance globale du service (network + processing).")
 
-st.divider()
+with col_m3:
+    st.markdown("**🎯 Prédictions**")
+    st.code("model_predictions_total\n[model, status, class]", language="text")
+    st.caption("Business Metric : Volume de prédictions par classe (0 ou 1).")
 
-# --- CONCLUSION NARRATIVE ---
-st.success("""
-✅ **Synthèse :** 
-BentoML transforme notre fichier modèle statique en un **micro-service résilient**.
-Grâce à sa capacité de rechargement à chaud et son instrumentation native, il s'intègre parfaitement dans notre boucle MLOps automatisée (Airflow → MLflow → BentoML → Prometheus).
-""")
+with col_m4:
+    st.markdown("**⚡ Latence Modèle**")
+    st.code("model_prediction_latency_seconds\n[buckets]", language="text")
+    st.caption("Performance pure de l'inférence (hors réseau).")
