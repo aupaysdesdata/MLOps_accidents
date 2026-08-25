@@ -4,7 +4,7 @@ import streamlit as st
 st.set_page_config(
     page_title="MLOps Accidents - GitHub - CI/CD & Gestion de projet",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # --- STYLE ---
