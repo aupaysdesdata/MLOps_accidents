@@ -94,7 +94,28 @@ Le DAG `mlops_accident_gravity_pipeline` orchestre les étapes suivantes :
 
 Le service `ml-api` basé sur BentoML expose un endpoint interne `/reload_model`. Après promotion du modèle dans MLflow, Airflow appelle cet endpoint pour forcer une relecture du modèle `Modèle_Gravité_Accidents@champion` sans redémarrage de conteneur.
 
-## 4. Guide de Démarrage Rapide
+## 4. Data drift monitoring
+
+Le projet surveille la dérive statistique des données d'entrée afin de détecter une évolution susceptible de dégrader les prédictions du modèle. Le DAG Airflow `drift_monitoring` compare les variables numériques de `X_train.csv`, utilisé comme référence, avec celles de `X_test.csv`, considéré comme jeu de données courant.
+
+Le DAG s'exécute chaque semaine (`@weekly`) et peut également être déclenché automatiquement à la fin du DAG principal `mlops_accident_gravity_pipeline` grâce à `TriggerDagRunOperator`.
+
+### Étapes du monitoring
+
+1. `compute_drift` : calcule, pour chaque variable numérique, un test de Kolmogorov-Smirnov (KS) et le Population Stability Index (PSI). Les résultats sont transmis à la tâche suivante via les XComs Airflow et apparaissent dans les logs de la tâche.
+2. `alert_on_drift` : agrège les résultats et contrôle la proportion de variables en dérive. Une variable est considérée comme étant en drift si `p-value < 0.05` pour le test KS ou si `PSI > 0.2`.
+
+Si au moins 30 % des variables présentent une dérive, la tâche échoue et recommande un réentraînement. En dessous de ce seuil, une dérive éventuelle est signalée comme avertissement dans les logs Airflow ; en l'absence de dérive, le DAG indique que les données restent cohérentes avec la référence.
+
+Le flux de contrôle est donc le suivant :
+
+```text
+pipeline principal --> drift_monitoring --> compute_drift --> alert_on_drift
+```
+
+Ce monitoring complète le suivi des métriques du modèle dans MLflow. MLflow permet de vérifier la qualité d'un modèle entraîné, tandis que le drift monitoring détecte en amont si la distribution des données évolue et si un nouveau cycle d'entraînement doit être envisagé. Le DAG et ses logs sont consultables depuis l'interface Airflow sur `http://localhost:8080`.
+
+## 5. Guide de Démarrage Rapide
 
 ### Prérequis
 
@@ -158,7 +179,7 @@ docker compose logs -f ml-api
 docker compose down -v
 ```
 
-## 5. CI / Intégration Continue
+## 6. CI / Intégration Continue
 
 Le dépôt intègre une pipeline CI GitHub Actions définie dans [.github/workflows/ci.yml](.github/workflows/ci.yml). Elle couvre deux validations principales :
 
@@ -167,7 +188,7 @@ Le dépôt intègre une pipeline CI GitHub Actions définie dans [.github/workfl
 
 Cette automatisation permet de détecter rapidement les erreurs de compilation ou de conteneurisation avant la fusion des changements.
 
-## 6. Accès aux Interfaces (URLs et Ports)
+## 7. Accès aux Interfaces (URLs et Ports)
 
 
 | Service               | URL                                                                                    | Identifiants / Notes | Rôle                                            |
