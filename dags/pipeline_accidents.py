@@ -1,4 +1,4 @@
-gotfrom datetime import datetime
+from datetime import datetime
 from airflow import DAG
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.operators.python import PythonOperator
@@ -20,8 +20,6 @@ EXPERIMENT_NAME = "Gravité_Accidents"
 MODEL_NAME = "Modèle_Gravité_Accidents"
 DOCKER_NETWORK = "mlops_accidents_default"
 VALIDATION_DATA_DIR = "/opt/airflow/data/preprocessed"
-
-
 
 
 default_args = {
@@ -75,7 +73,9 @@ def check_metrics_and_alert(**context):
     validation_features_path = os.path.join(VALIDATION_DATA_DIR, "X_test.csv")
     validation_target_path = os.path.join(VALIDATION_DATA_DIR, "y_test.csv")
 
-    if not os.path.exists(validation_features_path) or not os.path.exists(validation_target_path):
+    if not os.path.exists(validation_features_path) or not os.path.exists(
+        validation_target_path
+    ):
         raise AirflowFailException(
             f"Fichiers de validation introuvables dans {VALIDATION_DATA_DIR}."
         )
@@ -90,7 +90,9 @@ def check_metrics_and_alert(**context):
         champion_pred = champion_model.predict(X_val)
         champion_f1 = f1_score(y_val, champion_pred, average="weighted")
 
-        new_model = mlflow.sklearn.load_model(f"runs:/{current_run_id}/random_forest_model")
+        new_model = mlflow.sklearn.load_model(
+            f"runs:/{current_run_id}/random_forest_model"
+        )
         new_pred = new_model.predict(X_val)
         new_f1 = f1_score(y_val, new_pred, average="weighted")
 
@@ -101,11 +103,17 @@ def check_metrics_and_alert(**context):
 
         if new_f1 < champion_f1:
             should_promote = False
-            print("Le nouveau modèle est strictement moins bon que le champion sur les mêmes données de validation.")
+            print(
+                "Le nouveau modèle est strictement moins bon que le champion sur les mêmes données de validation."
+            )
         else:
-            print("Le nouveau modèle a un F1 score au moins égal à celui du champion sur les mêmes données de validation.")
+            print(
+                "Le nouveau modèle a un F1 score au moins égal à celui du champion sur les mêmes données de validation."
+            )
     except mlflow.exceptions.MlflowException as exc:
-        print(f"Aucun modèle marqué '@champion' trouvé. Première promotion du projet. ({exc})")
+        print(
+            f"Aucun modèle marqué '@champion' trouvé. Première promotion du projet. ({exc})"
+        )
 
     context["ti"].xcom_push(key="should_promote", value=should_promote)
 
@@ -115,9 +123,13 @@ def promote_model_to_champion(**context):
     Associe l'alias 'champion' à la dernière version du modèle validé
     seulement si le nouveau modèle est meilleur que le champion.
     """
-    should_promote = context["ti"].xcom_pull(key="should_promote", task_ids="evaluate_metrics")
+    should_promote = context["ti"].xcom_pull(
+        key="should_promote", task_ids="evaluate_metrics"
+    )
     if should_promote is False:
-        print("Le modèle champion reste inchangé, car le nouveau modèle n'est pas meilleur.")
+        print(
+            "Le modèle champion reste inchangé, car le nouveau modèle n'est pas meilleur."
+        )
         return
 
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
@@ -164,7 +176,6 @@ with DAG(
     is_paused_upon_creation=False,
     tags=["accidents"],
 ) as dag:
-
     task_preprocess = DockerOperator(
         task_id="preprocess",
         image="mlops_accidents-preprocess:latest",
