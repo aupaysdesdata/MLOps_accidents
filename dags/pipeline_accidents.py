@@ -1,4 +1,4 @@
-from datetime import datetime
+gotfrom datetime import datetime
 from airflow import DAG
 from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.operators.python import PythonOperator
@@ -7,6 +7,7 @@ from docker.types import Mount
 import mlflow
 import pandas as pd
 from airflow.utils.trigger_rule import TriggerRule
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from mlflow.tracking import MlflowClient
 import requests
 import os
@@ -201,6 +202,14 @@ with DAG(
         trigger_rule=TriggerRule.ALL_DONE,
     )
 
+    task_trigger_drift = TriggerDagRunOperator(
+        task_id="trigger_drift_monitoring",
+        trigger_dag_id="drift_monitoring",
+        wait_for_completion=False,
+        trigger_rule=TriggerRule.ALL_DONE,
+    )
+
     task_preprocess >> task_train >> task_evaluate
     task_evaluate >> task_promote
     task_evaluate >> task_reload
+    [task_promote, task_reload] >> task_trigger_drift
