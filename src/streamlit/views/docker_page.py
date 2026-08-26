@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="Docker - Infrastructure",
@@ -29,46 +30,57 @@ st.divider()
 st.markdown('<p class="sub-header">1. Architecture globale</p>', unsafe_allow_html=True)
 st.markdown(
     "Le projet compte **13 services** répartis en 4 couches fonctionnelles. "
-    "Ils communiquent via le réseau interne Docker (`mlops_accidents_default`) et partagent des **volumes nommés** pour la persistance des données."
+    "Le schéma ci-dessous montre comment ils communiquent entre eux."
 )
 
-col1, col2 = st.columns(2)
-with col1:
-    st.markdown("##### Couche données & ML")
-    st.markdown(
-        """
-        - **`preprocess`** — prépare les données brutes et alimente le volume `accidents-data`
-        - **`train`** — entraîne le modèle Random Forest et envoie les métriques à MLflow
-        - **`mlflow`** — serveur de tracking des expériences (port 5000)
-        """
-    )
-    st.markdown("##### Couche orchestration")
-    st.markdown(
-        """
-        - **`postgres-airflow`** — base PostgreSQL pour l'état d'Airflow
-        - **`airflow-init`** — initialise la BDD et crée l'utilisateur admin (one-shot)
-        - **`airflow`** — scheduler + webserver Airflow (port 8080)
-        """
-    )
+components.html(
+    """
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad: true, theme: 'default'});</script>
+    <div class="mermaid">
+    flowchart TD
+      subgraph Orchestration
+        P1[postgres-airflow]
+        P2[airflow-init]
+        P3[airflow]
+      end
 
-with col2:
-    st.markdown("##### Couche API & exposition")
-    st.markdown(
-        """
-        - **`ml-api`** — service BentoML qui sert les prédictions (port interne 3000)
-        - **`streamlit`** — cette application de présentation (port interne 8501)
-        - **`nginx`** — reverse proxy HTTPS, point d'entrée unique (ports 80/443)
-        - **`nginx-exporter`** — exporte les métriques nginx pour Prometheus (port 9113)
-        """
-    )
-    st.markdown("##### Couche observabilité")
-    st.markdown(
-        """
-        - **`prometheus`** — collecte les métriques (port 9090)
-        - **`grafana`** — dashboards de monitoring (port 3000)
-        - **`grafana-init`** — configure alertes et contact points au démarrage (one-shot)
-        """
-    )
+      subgraph Tracking_Registre
+        MLF[mlflow]
+      end
+
+      subgraph Modélisation
+        PRE[preprocess]
+        TRN[train]
+      end
+
+      subgraph API_Serving
+        API[ml-api / BentoML]
+      end
+
+      subgraph Monitoring_Front
+        PROM[prometheus]
+        GRAF[grafana]
+        STRM[streamlit]
+        NGINX[nginx]
+      end
+
+      P3 -->|schedule| PRE
+      P3 -->|schedule| TRN
+      PRE -->|data volume| TRN
+      TRN -->|metrics + model| MLF
+      MLF -->|champion alias| API
+      P3 -->|reload_model| API
+      API -->|metrics| PROM
+      STRM -->|api requests| API
+      NGINX -->|proxy| STRM
+      NGINX -->|proxy /predict| API
+      PROM -->|datasource| GRAF
+      MLF -->|ui| GRAF
+    </div>
+    """,
+    height=600,
+)
 
 st.divider()
 
