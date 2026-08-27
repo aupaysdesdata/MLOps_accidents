@@ -26,16 +26,67 @@ st.markdown(
 )
 
 st.markdown("""
-Le développement du projet s'appuie sur deux fonctionnalités de **GitHub** : l'**intégration continue**
-(GitHub Actions), qui vérifie automatiquement chaque changement de code avant qu'il n'atteigne `main`,
-et **GitHub Projects**, qui organise le travail de l'équipe sous forme de tableau **Kanban**.
+Le développement du projet s'appuie sur deux fonctionnalités de **GitHub** : **GitHub Projects**,
+qui organise le travail de l'équipe sous forme de tableau **Kanban**, et l'**intégration continue**
+(GitHub Actions), qui vérifie automatiquement chaque changement de code avant qu'il n'atteigne `main`.
 """)
 
 st.divider()
 
-# --- SECTION 1 : INTÉGRATION CONTINUE ---
+# --- SECTION 1 : GESTION DE PROJET (KANBAN) ---
 st.markdown(
-    '<p class="sub-header">1. Intégration continue (GitHub Actions)</p>',
+    '<p class="sub-header">1. Gestion de projet (GitHub Projects / Kanban)</p>',
+    unsafe_allow_html=True,
+)
+st.markdown("""
+Le travail d'équipe est réparti et suivi via un tableau **Kanban GitHub Projects**, directement lié aux
+*issues* et *pull requests* du dépôt. Chaque membre de l'équipe développe sur sa propre branche
+ avant de proposer une *pull request* vers `main`.
+""")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown("### Colonnes du board")
+    st.markdown("""
+    - **To do** : tâches identifiées, pas encore prises en charge.
+    - **In progress** : tâche en cours de développement sur une branche personnelle.
+    - **In review** : *pull request* ouverte, en attente de relecture.
+    - **Done** : *pull request* mergée dans `main`, CI passée.
+    """)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with col2:
+    st.markdown("### Suivi du board")
+    st.markdown("""
+    Chaque carte du board est liée à une *issue* ou une *pull request* GitHub.
+    - Le déplacement des cartes n'est pas automatisé.
+    - Les colonnes sont mises à jour **manuellement**, à chaque réunion d'équipe.
+    - Le statut CI (✅/❌) de la PR associée reste consultable directement sur GitHub.
+    """)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with col3:
+    st.markdown("### Travail d'équipe")
+    st.markdown("""
+    - Une branche par contributeur → développement en parallèle sans blocage.
+    - Les tâches du board sont réparties par brique du projet
+      (Airflow, MLflow, BentoML, Nginx, Monitoring, Streamlit...).
+    - La CI agit comme un filet de sécurité commun avant tout merge.
+    """)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+st.link_button(
+    "Ouvrir le board GitHub Projects",
+    "https://github.com/aupaysdesdata/MLOps_accidents/projects",
+    use_container_width=True,
+)
+
+st.divider()
+
+# --- SECTION 2 : INTÉGRATION CONTINUE ---
+st.markdown(
+    '<p class="sub-header">2. Intégration continue (GitHub Actions)</p>',
     unsafe_allow_html=True,
 )
 st.markdown("""
@@ -121,51 +172,6 @@ st.link_button(
 
 st.divider()
 
-# --- SECTION 2 : GESTION DE PROJET (KANBAN) ---
-st.markdown(
-    '<p class="sub-header">2. Gestion de projet (GitHub Projects / Kanban)</p>',
-    unsafe_allow_html=True,
-)
-st.markdown("""
-Le travail d'équipe est réparti et suivi via un tableau **Kanban GitHub Projects**, directement lié aux
-*issues* et *pull requests* du dépôt. Chaque membre de l'équipe développe sur sa propre branche
- avant de proposer une *pull request* vers `main`.
-""")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.markdown("### Colonnes du board")
-    st.markdown("""
-    - **To do** : tâches identifiées, pas encore prises en charge.
-    - **In progress** : tâche en cours de développement sur une branche personnelle.
-    - **In review** : *pull request* ouverte, en attente de relecture.
-    - **Done** : *pull request* mergée dans `main`, CI passée.
-    """)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-with col2:
-    st.markdown("### Suivi du board")
-    st.markdown("""
-    Chaque carte du board est liée à une *issue* ou une *pull request* GitHub.
-    - Le déplacement des cartes n'est pas automatisé.
-    - Les colonnes sont mises à jour **manuellement**, à chaque réunion d'équipe.
-    - Le statut CI (✅/❌) de la PR associée reste consultable directement sur GitHub.
-    """)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-with col3:
-    st.markdown("### Travail d'équipe")
-    st.markdown("""
-    - Une branche par contributeur → développement en parallèle sans blocage.
-    - Les tâches du board sont réparties par brique du projet
-      (Airflow, MLflow, BentoML, Nginx, Monitoring, Streamlit...).
-    - La CI agit comme un filet de sécurité commun avant tout merge.
-    """)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-st.divider()
-
 st.success("""
 **Synthèse :**
 GitHub structure à la fois la **qualité du code** (CI/CD via Actions, aucun merge sans build réussi,
@@ -174,9 +180,3 @@ manuellement en réunion, une branche par personne, revue par *pull request*).
 Ces deux automatisations permettent à une équipe de plusieurs contributeurs d'avancer en parallèle sur des
 briques différentes tout en gardant `main` toujours fonctionnel.
 """)
-
-st.link_button(
-    "Ouvrir le board GitHub Projects",
-    "https://github.com/aupaysdesdata/MLOps_accidents/projects",
-    use_container_width=True,
-)
