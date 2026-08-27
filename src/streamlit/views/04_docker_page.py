@@ -79,7 +79,7 @@ components.html(
       MLF -->|ui| GRAF
     </div>
     """,
-    height=600,
+    height=1200,
 )
 
 st.divider()
