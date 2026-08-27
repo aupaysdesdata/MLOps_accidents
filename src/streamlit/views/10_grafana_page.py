@@ -2,7 +2,7 @@ import streamlit as st
 
 # Configuration de la page
 st.set_page_config(
-    page_title="MLOps Accidents - Dashboarding Grafana",
+    page_title="MLOps Accidents - Grafana",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -21,113 +21,133 @@ st.markdown("""
 st.markdown('<p class="main-header">Visualisation & Alerting avec Grafana</p>', unsafe_allow_html=True)
 
 st.markdown("""
-Grafana est l'interface de pilotage de notre architecture. Il transforme les métriques brutes de Prometheus en indicateurs actionnables et déclenche des alertes automatiques en cas d'anomalie. Toute la configuration est déployée **"as code"** au démarrage.
+Grafana transforme les métriques brutes de Prometheus en indicateurs visuels et déclenche des alertes automatiques. 
+Toute l'instance est déployée **"As Code"** : aucun clic manuel, tout est versionné et automatisé au démarrage.
 """)
 
+# Bouton d'accès rapide
 st.markdown(
-    "<div style='text-align:center; margin: 1rem 0;'>"
+    "<div style='text-align:center; margin: 1.5rem 0;'>"
     "<a href='http://localhost:3000' target='_blank'>"
-    "<button style='background-color:#28a745; color:white; border:none; padding:15px 30px; font-size:1.2rem; border-radius:5px; cursor:pointer;'>"
-    "Ouvrir Grafana</button></a>"
+    "<button style='background-color:#F46800; color:white; border:none; padding:12px 24px; font-size:1.1rem; border-radius:6px; cursor:pointer; font-weight:bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>"
+    "📊 Ouvrir le Dashboard Grafana</button></a>"
     "</div>",
     unsafe_allow_html=True,
 )
 
 st.divider()
 
-# --- 1. DASHBOARD "MLOPS - SUIVI MODÈLE" ---
-st.markdown('<p class="sub-header">1. Dashboard de Supervision</p>', unsafe_allow_html=True)
+# --- 1. SOURCE DE DONNEES PROMETHEUS ---
+st.markdown('<p class="sub-header">1. Source de données : Prometheus</p>', unsafe_allow_html=True)
 
 st.markdown("""
-Nous avons conçu un dashboard centralisé (`mlops-dashboard.json`) répondant à 4 questions critiques pour l'opération du modèle :
-""")
+    Nous utilisons **Prometheus** comme source principale, pour sa compatibilité native avec les métriques exposées par BentoML et Nginx.
+    Grafana interroge cette base de séries temporelles pour générer les visualisations en temps réel.
+    """)
+
+st.caption("""💡**Déploiement :** La connexion est configurée automatiquement via **`datasources.yml`** au lancement du container. Aucune saisie manuelle d'URL n'est nécessaire.
+    """)
+st.code("""
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    url: http://prometheus:9090
+    isDefault: true
+    """, language="yaml")
+
+st.divider()
+
+# --- 2. DASHBOARD "MLOPS" ---
+st.markdown('<p class="sub-header">2. Dashboard</p>', unsafe_allow_html=True)
+
+st.markdown("Notre dashboard centralisé (`mlops-dashboard.json`) répond à 4 questions pour l'opération du modèle :")
 
 col1, col2 = st.columns(2)
 
 with col1:
-    st.markdown("### 📊 Indicateurs de Santé (SLA)")
-    st.markdown("""
-    1.  **Taux d'Erreur (`/predict`)** :
-        - *Cible :* < 1% (Warning), > 5% (Critique).
-        - *Interprétation :* Un pic indique un bug dans le code, un problème de mémoire ou des données d'entrée malformées.
-    
-    2.  **Latence p95 (Temps de réponse)** :
-        - *Métrique :* `histogram_quantile(0.95, ...)`
-        - *Interprétation :* 95% des requêtes doivent répondre en moins de X secondes. Une augmentation signale un modèle trop lourd ou une saturation du serveur.
+    st.markdown("**📊 Indicateurs de Santé**")
+    st.info("""
+    1.  **Taux d'Erreur** (`/predict`) : Cible < 1% (Warning), > 5% (Critique). Un pic signale un bug ou des données malformées.
+    2.  **Latence p95** : Temps de réponse pour 95% des requêtes. Une hausse indique une saturation ou un modèle trop lourd.
     """)
 
 with col2:
-    st.markdown("### 🤖 Indicateurs Métier & Drift")
-    st.markdown("""
-    3.  **Distribution des Prédictions** :
-        - *Visuel :* Camembet (Classe 0 vs Classe 1).
-        - *Interprétation :* Une dérive soudaine (ex: 90% de Classe 1) peut indiquer un **Data Drift** (changement de distribution des données entrantes) ou un événement majeur réel.
-    
-    4.  **Trafic Global (RPS)** :
-        - *Métrique :* Requêtes par seconde.
-        - *Interprétation :* Permet de dimensionner l'infrastructure et de corréler les erreurs avec les pics de charge.
+    st.markdown("**🤖 Indicateurs Métier**")
+    st.success("""
+    3.  **Distribution des Prédictions** : Ratio Classe 0 vs 1. Une dérive soudaine peut indiquer un **Data Drift**.
+    4.  **Trafic Global (Requêtes par seconde)** : Permet de dimensionner l'infrastructure et de corréler les erreurs avec les pics de charge.
     """)
 
-st.info("💡 **Configuration as Code :** Le dashboard est provisionné automatiquement via `dashboards.yml` au lancement du container Grafana. Aucune configuration manuelle n'est requise.")
+st.caption("💡 **Déploiement :** Le dashboard est importé automatiquement via `dashboards.yml` qui scanne le dossier de provisioning au démarrage.")
 
 st.divider()
 
-# --- 2. ALERTING & NOTIFICATION ---
-st.markdown('<p class="sub-header">2. Système d\'Alerte Automatisé</p>', unsafe_allow_html=True)
+# --- 3. ALERTES AUTOMATISÉES ---
+st.markdown('<p class="sub-header">3. Alertes & Notifications</p>', unsafe_allow_html=True)
 
 st.markdown("""
-Pour réagir proactivement, nous avons déployé deux règles d'alerte critiques via l'API de provisioning (`init_grafana_alerts.py`) :
+Pour réagir proactivement, deux règles d'alerte critiques sont déployées via notre script d'initialisation (`init_grafana_alerts.py`).
 """)
 
 c_alert1, c_alert2 = st.columns(2)
 
 with c_alert1:
-    st.markdown("### 🚨 Alerte 1 : Taux d'Erreur Élevé")
+    st.markdown("**🚨 Alerte 1 : Taux d'Erreur Élevé**")
     st.markdown("""
-    - **Condition :** Taux d'erreur > 5% sur 5 minutes.
+    - **Seuil :** > 5% sur 5 min.
     - **Signification :** Le service est instable ou les données sont invalides.
-    - **Action :** Notification immédiate à l'équipe de garde.
     """)
+    # AJOUT : La requête technique réelle
     st.code("""
-// Extrait logique d'alerte
 sum(rate(app_requests_total{status="error"}[5m])) 
 / 
 sum(rate(app_requests_total[5m])) > 0.05
     """, language="text")
 
 with c_alert2:
-    st.markdown("### 🐢 Alerte 2 : Latence Excessive")
+    st.markdown("**🐢 Alerte 2 : Latence Excessive**")
     st.markdown("""
-    - **Condition :** Latence p95 > 2 secondes.
-    - **Signification :** Le modèle est trop lent pour la production, risque de timeout.
-    - **Action :** Investigation sur la performance du modèle ou de l'infrastructure.
+    - **Seuil :** p95 > 2 secondes.
+    - **Signification :** Le modèle est trop lent, risque de timeout.
     """)
+    # AJOUT : La requête technique réelle
     st.code("""
-// Extrait logique d'alerte
-histogram_quantile(0.95, rate(model_prediction_latency_seconds_bucket[5m])) > 2.0
+histogram_quantile(0.95, rate(
+  model_prediction_latency_seconds_bucket[5m]
+)) > 2.0
     """, language="text")
 
-st.markdown("""
-**Canal de Notification :**
-Les alertes sont routées vers un **Webhook Discord** configuré dynamiquement via variable d'environnement (`DISCORD_WEBHOOK_URL`). Cela permet une réception instantanée sur mobile ou desktop par l'équipe technique.
+# REMPLACEMENT : Schéma technique plus pertinent
+st.markdown("**🔄 Flux d'Alerting Automatisé**")
+mermaid_code = """
+graph LR
+    Script[Script init_grafana_alerts.py] -->|1. API Call| Grafana[(Grafana)]
+    Grafana -->|2. Détection| Rule[Règle PromQL]
+    Rule -->|3. Trigger| Webhook[Webhook Discord]
+    Webhook -->|4. Notification| Team[Équipe Ops]
+    
+    style Script fill:#e3f2fd,stroke:#1f77b4
+    style Grafana fill:#f46800,stroke:#333,color:white
+    style Team fill:#d4edda,stroke:#28a745
+"""
+st.mermaid_chart(mermaid_code)
+
+# FUSION : Notifications + Déploiement
+st.info("""
+💡 **Déploiement & Notifications :**
+Au lancement, le service `grafana-init` exécute un script Python qui :
+1.  Crée le dossier "MLOps_Alerts".
+2.  Configure le point de contact **Discord** (via API). L'URL du webhook est injectée dynamiquement via `DISCORD_WEBHOOK_URL` pour sécuriser le secret.
+3.  Pousse les règles d'alertes JSON via l'API de provisioning.
+
+*Résultat : Une chaîne d'alerting opérationnelle dès la première seconde, sans configuration manuelle.*
 """)
 
 st.divider()
 
-# --- 3. ARCHITECTURE DE DÉPLOIEMENT (PROVISIONING) ---
-st.markdown('<p class="sub-header">3. Déploiement "As Code"</p>', unsafe_allow_html=True)
-
-st.markdown("""
-Contrairement à une configuration manuelle ("click-ops"), notre instance Grafana est entièrement pilotée par le code :
-1.  **Datasource :** `datasources.yml` configure automatiquement la connexion à Prometheus.
-2.  **Dashboards :** `dashboards.yml` scanne le dossier `/etc/grafana/provisioning/dashboards` et importe le JSON.
-3.  **Alertes & Contacts :** Un script Python (`init_grafana_alerts.py`) s'exécute au démarrage (`grafana-init`) pour :
-    - Créer le dossier "MLOps_Alerts".
-    - Configurer le point de contact Discord (en injectant le secret).
-    - Pousser les règles d'alertes via l'API de provisioning.
-""")
-
+# --- SYNTHÈSE ---
 st.success("""
 ✅ **Grafana est opérationnel.** 
-Il fournit une visibilité temps réel sur la santé du modèle et garantit qu'aucune anomalie critique (erreur, latence) ne passe inaperçue grâce aux notifications Discord automatisées.
+Il fournit une visibilité temps réel sur la santé du modèle et garantit qu'aucune anomalie critique (erreur, latence) ne passe inaperçue grâce à une chaîne d'alerting entièrement automatisée de bout en bout.
 """)
